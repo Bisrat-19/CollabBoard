@@ -1,0 +1,40 @@
+# Node modules
+node_modules/
+
+# Build output
+.next/
+out/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS & editor junk
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Typescript build
+*.tsbuildinfo
+
+# Tailwind cache
+.tailwind/
+
+# Optional: lock files if you're using only one package manager
+# Uncomment the one you're using, and ignore the rest
+
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
