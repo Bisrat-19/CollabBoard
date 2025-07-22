@@ -32,9 +32,9 @@ const taskSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['todo', 'in-progress', 'done'],
-      default: 'todo',
-    },
+      enum: ['To Do', 'In Progress', 'Done'], 
+      default: 'To Do',
+    },    
     dueDate: Date,
     labels: [String],
     comments: [commentSchema],
