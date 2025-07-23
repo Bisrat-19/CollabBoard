@@ -83,7 +83,8 @@ export function TeamsView({ projects }: TeamsViewProps) {
                 <Avatar className="h-10 w-10 lg:h-12 lg:w-12">
                   <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
                   <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-                    {member.name.charAt(0)}
+                    {member?.name?.charAt(0) ?? "?"}
+
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">

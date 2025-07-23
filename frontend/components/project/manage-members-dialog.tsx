@@ -194,7 +194,8 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
                       <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-                        {member.name.charAt(0)}
+                        {member?.name?.charAt(0) ?? "?"}
+
                       </AvatarFallback>
                     </Avatar>
                     <div>

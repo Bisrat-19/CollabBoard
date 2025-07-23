@@ -1,3 +1,5 @@
+import { Key } from "react"
+
 export interface User {
   id: string
   name: string
@@ -8,6 +10,7 @@ export interface User {
 }
 
 export interface Project {
+  _id: Key | null | undefined
   id: string
   name: string
   description: string

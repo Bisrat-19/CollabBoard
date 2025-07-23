@@ -1,106 +1,76 @@
 import type { Project } from "@/types"
-
-// Mock data
-const mockProjects: Project[] = [
-  {
-    id: "1",
-    name: "Website Redesign",
-    description: "Complete redesign of the company website with modern UI/UX",
-    ownerId: "1",
-    members: [
-      {
-        id: "1",
-        name: "John Doe",
-        email: "admin@collabboard.com",
-        role: "admin",
-        avatar: "/placeholder.svg?height=40&width=40",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "2",
-        name: "Jane Smith",
-        email: "user@collabboard.com",
-        role: "user",
-        avatar: "/placeholder.svg?height=40&width=40",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ],
-    createdAt: "2024-01-15T00:00:00Z",
-    updatedAt: "2024-01-20T00:00:00Z",
-  },
-  {
-    id: "2",
-    name: "Mobile App Development",
-    description: "Develop a cross-platform mobile application",
-    ownerId: "1",
-    members: [
-      {
-        id: "1",
-        name: "John Doe",
-        email: "admin@collabboard.com",
-        role: "admin",
-        avatar: "/placeholder.svg?height=40&width=40",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ],
-    createdAt: "2024-01-10T00:00:00Z",
-    updatedAt: "2024-01-18T00:00:00Z",
-  },
-]
+import { authService } from "./auth-service"
 
 class ProjectService {
+  private API_BASE = "http://localhost:5000/api/projects"
+
+  private async getAuthHeaders() {
+    const token = authService.getToken()
+    if (!token) throw new Error("Unauthorized")
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    }
+  }
+
   async getProjects(): Promise<Project[]> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    return mockProjects
+    const res = await fetch(this.API_BASE, {
+      headers: await this.getAuthHeaders(),
+    })
+
+    if (!res.ok) throw new Error("Failed to fetch projects")
+    return res.json()
   }
 
-  async getProject(id: string): Promise<Project | null> {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    return mockProjects.find((p) => p.id === id) || null
+  async getProject(id: string): Promise<Project> {
+    const res = await fetch(`${this.API_BASE}/${id}`, {
+      headers: await this.getAuthHeaders(),
+    })
+
+    if (!res.ok) throw new Error("Project not found")
+    return res.json()
   }
 
-  async createProject(data: { name: string; description: string; ownerId: string }): Promise<Project> {
-    await new Promise((resolve) => setTimeout(resolve, 800))
+  async createProject(data: { name: string; description: string }): Promise<Project> {
+    const res = await fetch(this.API_BASE, {
+      method: "POST",
+      headers: await this.getAuthHeaders(),
+      body: JSON.stringify(data),
+    })
 
-    const newProject: Project = {
-      id: Date.now().toString(),
-      ...data,
-      members: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.message || "Failed to create project")
     }
 
-    mockProjects.push(newProject)
-    return newProject
+    return res.json()
   }
 
   async updateProject(id: string, data: Partial<Project>): Promise<Project> {
-    await new Promise((resolve) => setTimeout(resolve, 600))
+    const res = await fetch(`${this.API_BASE}/${id}`, {
+      method: "PUT",
+      headers: await this.getAuthHeaders(),
+      body: JSON.stringify(data),
+    })
 
-    const projectIndex = mockProjects.findIndex((p) => p.id === id)
-    if (projectIndex === -1) {
-      throw new Error("Project not found")
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.message || "Failed to update project")
     }
 
-    mockProjects[projectIndex] = {
-      ...mockProjects[projectIndex],
-      ...data,
-      updatedAt: new Date().toISOString(),
-    }
-
-    return mockProjects[projectIndex]
+    return res.json()
   }
 
   async deleteProject(id: string): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 400))
+    const res = await fetch(`${this.API_BASE}/${id}`, {
+      method: "DELETE",
+      headers: await this.getAuthHeaders(),
+    })
 
-    const projectIndex = mockProjects.findIndex((p) => p.id === id)
-    if (projectIndex === -1) {
-      throw new Error("Project not found")
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.message || "Failed to delete project")
     }
-
-    mockProjects.splice(projectIndex, 1)
   }
 }
 

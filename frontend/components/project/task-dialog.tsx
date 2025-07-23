@@ -219,7 +219,7 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                         <Avatar className="h-6 w-6 mr-2">
                           <AvatarImage src={member.avatar || "/placeholder.svg"} />
                           <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs">
-                            {member.name.charAt(0)}
+                            {member?.name?.charAt(0) ?? "?"}
                           </AvatarFallback>
                         </Avatar>
                         <div>

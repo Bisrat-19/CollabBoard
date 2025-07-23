@@ -137,14 +137,18 @@ export function EnhancedDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 min-w-0">
               <div className="flex -space-x-2">
-                {project.members.slice(0, 3).map((member) => (
-                  <Avatar key={member.id} className="h-6 w-6 lg:h-8 lg:w-8 border-2 border-white ring-1 ring-gray-200">
+                {project.members.slice(0, 3).map((member, index) => (
+                  <Avatar
+                    key={member.id ?? `${member.name}-${index}`}
+                    className="h-6 w-6 lg:h-8 lg:w-8 border-2 border-white ring-1 ring-gray-200"
+                  >
                     <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
                     <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-                      {member.name.charAt(0)}
+                      {member?.name?.charAt(0) ?? "?"}
                     </AvatarFallback>
                   </Avatar>
                 ))}
+
                 {project.members.length > 3 && (
                   <div className="h-6 w-6 lg:h-8 lg:w-8 rounded-full bg-gray-100 border-2 border-white ring-1 ring-gray-200 flex items-center justify-center">
                     <span className="text-xs text-gray-600 font-medium">+{project.members.length - 3}</span>
@@ -189,7 +193,8 @@ export function EnhancedDashboard() {
                       <Avatar key={member.id} className="h-6 w-6 border-2 border-white">
                         <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
                         <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-                          {member.name.charAt(0)}
+                          {member?.name?.charAt(0) ?? "?"}
+
                         </AvatarFallback>
                       </Avatar>
                     ))}
@@ -398,9 +403,9 @@ export function EnhancedDashboard() {
                   >
                     {projects.map((project) =>
                       viewMode === "grid" ? (
-                        <ProjectCard key={project.id} project={project} />
+                        <ProjectCard key={project._id} project={project} />
                       ) : (
-                        <ProjectListItem key={project.id} project={project} />
+                        <ProjectListItem key={project._id} project={project} />
                       ),
                     )}
                   </div>
@@ -438,8 +443,8 @@ export function EnhancedDashboard() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                  {projects.map((project) => (
-                    <ProjectCard key={project.id} project={project} />
+                  {projects.map((project, index) => (
+                    <ProjectCard key={project.id ?? `project-${index}`} project={project} />
                   ))}
                 </div>
               )}

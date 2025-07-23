@@ -157,7 +157,8 @@ export function ProjectBoard({ project, onBack }: ProjectBoardProps) {
                     <Avatar key={member.id} className="h-8 w-8 border-2 border-white ring-1 ring-gray-200">
                       <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
                       <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-                        {member.name.charAt(0)}
+                        {member?.name?.charAt(0) ?? "?"}
+
                       </AvatarFallback>
                     </Avatar>
                   ))}
