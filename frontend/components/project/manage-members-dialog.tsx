@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Project, User } from "@/types"
 import { projectService } from "@/services/project-service"
 import { Button } from "@/components/ui/button"
@@ -13,40 +13,40 @@ import { useToast } from "@/hooks/use-toast"
 import { Search, UserPlus, X, Mail, Crown, UserIcon } from "lucide-react"
 
 // Mock available users for invitation
-const availableUsers: User[] = [
-  {
-    id: "3",
-    name: "Alice Johnson",
-    email: "alice@example.com",
-    role: "user",
-    avatar: "/placeholder.svg?height=40&width=40",
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "4",
-    name: "Bob Wilson",
-    email: "bob@example.com",
-    role: "user",
-    avatar: "/placeholder.svg?height=40&width=40",
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "5",
-    name: "Carol Davis",
-    email: "carol@example.com",
-    role: "user",
-    avatar: "/placeholder.svg?height=40&width=40",
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "6",
-    name: "David Brown",
-    email: "david@example.com",
-    role: "user",
-    avatar: "/placeholder.svg?height=40&width=40",
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-]
+// const availableUsers: User[] = [
+//   {
+//     id: "3",
+//     name: "Alice Johnson",
+//     email: "alice@example.com",
+//     role: "user",
+//     avatar: "/placeholder.svg?height=40&width=40",
+//     createdAt: "2024-01-01T00:00:00Z",
+//   },
+//   {
+//     id: "4",
+//     name: "Bob Wilson",
+//     email: "bob@example.com",
+//     role: "user",
+//     avatar: "/placeholder.svg?height=40&width=40",
+//     createdAt: "2024-01-01T00:00:00Z",
+//   },
+//   {
+//     id: "5",
+//     name: "Carol Davis",
+//     email: "carol@example.com",
+//     role: "user",
+//     avatar: "/placeholder.svg?height=40&width=40",
+//     createdAt: "2024-01-01T00:00:00Z",
+//   },
+//   {
+//     id: "6",
+//     name: "David Brown",
+//     email: "david@example.com",
+//     role: "user",
+//     avatar: "/placeholder.svg?height=40&width=40",
+//     createdAt: "2024-01-01T00:00:00Z",
+//   },
+// ]
 
 interface ManageMembersDialogProps {
   open: boolean
@@ -61,9 +61,20 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
   const [selectedUsers, setSelectedUsers] = useState<User[]>([])
   const [inviteEmail, setInviteEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [allUsers, setAllUsers] = useState<User[]>([])
+
+  useEffect(() => {
+    if (open) {
+      // Fetch users from backend
+      fetch("http://localhost:5000/api/users", { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => setAllUsers(data))
+        .catch(() => setAllUsers([]));
+    }
+  }, [open]);
 
   // Filter available users (exclude already added members)
-  const filteredUsers = availableUsers.filter(
+  const filteredUsers = allUsers.filter(
     (user) =>
       !project.members.some((member) => member.id === user.id) &&
       !selectedUsers.some((selected) => selected.id === user.id) &&
@@ -105,37 +116,34 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
 
   const handleInviteByEmail = async () => {
     if (!inviteEmail.trim()) return
-
     setIsLoading(true)
     try {
-      // In a real app, this would send an invitation email
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: inviteEmail.split("@")[0],
-        email: inviteEmail,
-        role: "user",
-        avatar: "/placeholder.svg?height=40&width=40",
-        createdAt: new Date().toISOString(),
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/users/invite", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({ email: inviteEmail, projectId: project.id }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to invite user");
       }
-
-      const updatedMembers = [...project.members, newUser]
-      const updatedProject = await projectService.updateProject(project.id, {
-        ...project,
-        members: updatedMembers,
-      })
-
-      onMembersUpdated(updatedProject)
-      setInviteEmail("")
+      // Success: show toast
+      setInviteEmail("");
       toast({
         title: "Invitation sent!",
         description: `Invitation has been sent to ${inviteEmail}`,
-      })
-    } catch (error) {
+      });
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to send invitation. Please try again.",
+        description: error.message || "Failed to send invitation. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
       setIsLoading(false)
     }
@@ -188,8 +196,8 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
             </div>
 
             <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
-              {project.members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {project.members.map((member, idx) => (
+                <div key={member.id ?? idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
@@ -267,8 +275,8 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
 
             {/* Available Users */}
             <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
-              {filteredUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+              {filteredUsers.map((user, idx) => (
+                <div key={user.id ?? idx} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
@@ -293,8 +301,8 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
               <div className="space-y-2">
                 <Label>Selected Users ({selectedUsers.length})</Label>
                 <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
-                  {selectedUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-2 bg-purple-50 rounded-lg">
+                  {selectedUsers.map((user, idx) => (
+                    <div key={user.id ?? idx} className="flex items-center justify-between p-2 bg-purple-50 rounded-lg">
                       <div className="flex items-center space-x-2">
                         <Avatar className="h-6 w-6">
                           <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />

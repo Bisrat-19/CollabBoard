@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, UserIcon } from "lucide-react"
@@ -32,11 +32,16 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
     setIsLoading(true)
 
     try {
+      const statusMap: Record<string, string> = {
+        "todo": "To Do",
+        "in-progress": "In Progress",
+        "done": "Done"
+      };
       const updateData: UpdateTaskData = {
         title: editedTask.title,
         description: editedTask.description,
         priority: editedTask.priority,
-        status: editedTask.status,
+        status: statusMap[editedTask.status] as any || "To Do",
         dueDate: editedTask.dueDate,
         assignedToId: editedTask.assignedTo?.id,
         labels: editedTask.labels,
@@ -70,6 +75,7 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Task Details</DialogTitle>
+          <DialogDescription>View and edit the details of this task, including comments and assignments.</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -213,8 +219,8 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                       Unassigned
                     </div>
                   </SelectItem>
-                  {projectMembers.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
+                  {projectMembers.map((member, idx) => (
+                    <SelectItem key={member.id ? member.id : `member-${idx}`} value={member.id}>
                       <div className="flex items-center">
                         <Avatar className="h-6 w-6 mr-2">
                           <AvatarImage src={member.avatar || "/placeholder.svg"} />

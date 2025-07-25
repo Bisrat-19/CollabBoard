@@ -170,8 +170,8 @@ export function CreateTaskDialog({
                         Unassigned
                       </div>
                     </SelectItem>
-                    {projectMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
+                    {projectMembers.map((member, idx) => (
+                      <SelectItem key={member.id ?? idx} value={member.id}>
                         <div className="flex items-center">
                           <Avatar className="h-6 w-6 mr-2">
                             <AvatarImage src={member.avatar || "/placeholder.svg"} />

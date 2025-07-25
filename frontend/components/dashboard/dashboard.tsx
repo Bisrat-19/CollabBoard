@@ -34,12 +34,22 @@ export function Dashboard() {
 
   const loadProjects = async () => {
     try {
-      const data = await projectService.getProjects()
-      setProjects(data)
+      const data = await projectService.getProjects();
+      // Map _id to id for all projects
+      const mapped = data.map((p: any) => ({
+        id: p.id || p._id,
+        name: p.name,
+        description: p.description,
+        members: p.members,
+        ownerId: p.ownerId,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      }));
+      setProjects(mapped as Project[]);
     } catch (error) {
-      console.error("Failed to load projects:", error)
+      console.error("Failed to load projects:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 

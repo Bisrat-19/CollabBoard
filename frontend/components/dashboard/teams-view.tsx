@@ -76,8 +76,8 @@ export function TeamsView({ projects }: TeamsViewProps) {
 
       {/* Team Members Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        {allMembers.map((member) => (
-          <Card key={member.id} className="hover:shadow-lg transition-shadow">
+        {allMembers.map((member, idx) => (
+          <Card key={member.id ?? idx} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-10 w-10 lg:h-12 lg:w-12">

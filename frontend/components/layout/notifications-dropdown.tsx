@@ -1,79 +1,74 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Bell, Clock, Users, MessageCircle, Calendar, CheckCircle } from "lucide-react"
-
-const notifications = [
-  {
-    id: 1,
-    title: "New task assigned to you",
-    description: "Design Homepage Layout - Due in 2 days",
-    time: "5 minutes ago",
-    type: "task",
-    icon: Clock,
-    unread: true,
-  },
-  {
-    id: 2,
-    title: "Project deadline approaching",
-    description: "Website Redesign project deadline is tomorrow",
-    time: "1 hour ago",
-    type: "deadline",
-    icon: Calendar,
-    unread: true,
-  },
-  {
-    id: 3,
-    title: "Team member joined project",
-    description: "Alice Johnson joined Mobile App Development",
-    time: "2 hours ago",
-    type: "team",
-    icon: Users,
-    unread: true,
-  },
-  {
-    id: 4,
-    title: "Comment on your task",
-    description: "Jane Smith commented on 'User Authentication'",
-    time: "3 hours ago",
-    type: "comment",
-    icon: MessageCircle,
-    unread: false,
-  },
-  {
-    id: 5,
-    title: "Task completed",
-    description: "Project Setup and Planning has been completed",
-    time: "1 day ago",
-    type: "completed",
-    icon: CheckCircle,
-    unread: false,
-  },
-]
+import { useAuth } from "@/contexts/auth-context"
+import type { Notification } from "@/types"
+import { useToast } from "@/hooks/use-toast"
 
 export function NotificationsDropdown() {
-  const [isOpen, setIsOpen] = useState(false)
-  const unreadCount = notifications.filter((n) => n.unread).length
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "task":
-        return "bg-blue-100 text-blue-600"
-      case "deadline":
-        return "bg-red-100 text-red-600"
-      case "team":
-        return "bg-green-100 text-green-600"
-      case "comment":
-        return "bg-purple-100 text-purple-600"
-      case "completed":
-        return "bg-emerald-100 text-emerald-600"
-      default:
-        return "bg-gray-100 text-gray-600"
+  const fetchNotifications = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+      }
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  useEffect(() => {
+    if (isOpen) fetchNotifications();
+  }, [isOpen]);
+
+  const handleAccept = async (notificationId: string) => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`http://localhost:5000/api/notifications/${notificationId}/accept`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
+    });
+    if (res.ok) {
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
+      );
+      toast({ title: "Invitation accepted", description: "You have joined the project." });
+    }
+  };
+
+  const handleDecline = async (notificationId: string) => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`http://localhost:5000/api/notifications/${notificationId}/decline`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
+    });
+    if (res.ok) {
+      setNotifications((prev) =>
+        prev.filter((n) => n._id !== notificationId)
+      );
+      toast({ title: "Invitation declined", description: "You have declined the invitation." });
+    }
+  };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -105,62 +100,71 @@ export function NotificationsDropdown() {
         </div>
 
         <div className="max-h-80 sm:max-h-96 overflow-y-auto custom-scrollbar">
-          {notifications.length === 0 ? (
+          {loading ? (
+            <div className="p-6 sm:p-8 text-center text-gray-500">Loading...</div>
+          ) : notifications.length === 0 ? (
             <div className="p-6 sm:p-8 text-center">
               <Bell className="h-10 w-10 sm:h-12 sm:w-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-sm">No notifications yet</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {notifications.map((notification) => {
-                const IconComponent = notification.icon
-                return (
-                  <div
-                    key={notification.id}
-                    className={`p-3 sm:p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                      notification.unread ? "bg-blue-50/50" : ""
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className={`p-1.5 sm:p-2 rounded-full ${getTypeColor(notification.type)}`}>
-                        <IconComponent className="h-3 w-3 sm:h-4 sm:w-4" />
+              {notifications.map((notification) => (
+                <div
+                  key={notification._id}
+                  className={`p-3 sm:p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                    !notification.read ? "bg-blue-50/50" : ""
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className={`p-1.5 sm:p-2 rounded-full bg-purple-100 text-purple-600`}>
+                      <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p
+                          className={`text-xs sm:text-sm font-medium text-gray-900 ${
+                            !notification.read ? "font-semibold" : ""
+                          }`}
+                        >
+                          {notification.type === "project-invite" && notification.data?.inviterName && notification.data?.projectId
+                            ? notification.message
+                            : notification.message}
+                        </p>
+                        {!notification.read && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 flex-shrink-0"></div>
+                        )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p
-                            className={`text-xs sm:text-sm font-medium text-gray-900 ${
-                              notification.unread ? "font-semibold" : ""
-                            }`}
+                      {notification.type === "project-invite" && !notification.read && (
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            className="bg-green-500 hover:bg-green-600 text-white"
+                            onClick={() => handleAccept(notification._id)}
                           >
-                            {notification.title}
-                          </p>
-                          {notification.unread && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 flex-shrink-0"></div>
-                          )}
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-gray-300 text-gray-700"
+                            onClick={() => handleDecline(notification._id)}
+                          >
+                            Decline
+                          </Button>
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{notification.description}</p>
-                        <p className="text-xs text-gray-500 mt-1 sm:mt-2">{notification.time}</p>
-                      </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1 sm:mt-2">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </p>
                     </div>
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>
-
-        {notifications.length > 0 && (
-          <div className="p-2 sm:p-3 border-t border-gray-200 bg-gray-50">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-xs sm:text-sm"
-            >
-              View all notifications
-            </Button>
-          </div>
-        )}
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

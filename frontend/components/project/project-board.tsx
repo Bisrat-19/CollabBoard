@@ -28,20 +28,40 @@ export function ProjectBoard({ project, onBack }: ProjectBoardProps) {
   const [createTaskColumn, setCreateTaskColumn] = useState<string>("")
   const [currentProject, setCurrentProject] = useState<Project>(project)
 
-  useEffect(() => {
-    loadBoard()
-  }, [project.id])
-
-  const loadBoard = async () => {
-    try {
-      const boardData = await taskService.getBoard(project.id)
-      setBoard(boardData)
-    } catch (error) {
-      console.error("Failed to load board:", error)
-    } finally {
-      setIsLoading(false)
-    }
+  if (!project || !project.id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Project Selected</h3>
+          <p className="text-gray-600 mb-4">Please select a project to view its board.</p>
+          <Button
+            onClick={onBack}
+            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
   }
+
+  useEffect(() => {
+    if (project && project.id) {
+      loadBoard();
+    }
+  }, [project?.id]);
+  const loadBoard = async () => {
+    if (!project || !project.id) return;
+    try {
+      const boardData = await taskService.getBoard(project.id);
+      setBoard(boardData);
+    } catch (error) {
+      console.error("Failed to load board:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleTaskCreated = (task: Task) => {
     if (!board) return
@@ -59,22 +79,8 @@ export function ProjectBoard({ project, onBack }: ProjectBoardProps) {
     setShowCreateTask(false)
   }
 
-  const handleTaskUpdated = (updatedTask: Task) => {
-    if (!board) return
-
-    setBoard((prev) => {
-      if (!prev) return prev
-
-      return {
-        ...prev,
-        columns: prev.columns.map((col) => ({
-          ...col,
-          tasks: col.tasks
-            .map((task) => (task.id === updatedTask.id ? updatedTask : task))
-            .filter((task) => task.status === col.id),
-        })),
-      }
-    })
+  const handleTaskUpdated = async (updatedTask: Task) => {
+    await loadBoard();
   }
 
   const handleCreateTask = (columnId: string) => {
@@ -153,12 +159,11 @@ export function ProjectBoard({ project, onBack }: ProjectBoardProps) {
               {/* Team Members */}
               <div className="flex items-center space-x-3 bg-gray-50 rounded-xl px-4 py-2">
                 <div className="flex -space-x-2">
-                  {currentProject.members.slice(0, 5).map((member) => (
-                    <Avatar key={member.id} className="h-8 w-8 border-2 border-white ring-1 ring-gray-200">
+                  {currentProject.members.slice(0, 5).map((member, idx) => (
+                    <Avatar key={member.id ? member.id : `member-${idx}`} className="h-8 w-8 border-2 border-white ring-1 ring-gray-200">
                       <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
                       <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
                         {member?.name?.charAt(0) ?? "?"}
-
                       </AvatarFallback>
                     </Avatar>
                   ))}

@@ -67,3 +67,13 @@ export interface CreateTaskData {
 export interface UpdateTaskData extends Partial<CreateTaskData> {
   status?: "todo" | "in-progress" | "done"
 }
+
+export interface Notification {
+  _id: string;
+  userId: string;
+  type: string; // e.g., 'project-invite'
+  message: string;
+  data?: { projectId?: string; inviterName?: string };
+  read: boolean;
+  createdAt: string;
+}

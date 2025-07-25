@@ -21,35 +21,50 @@ export function TaskComments({ task, onCommentAdded }: TaskCommentsProps) {
   const [newComment, setNewComment] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleAddComment = async () => {
-    if (!newComment.trim() || !user) return
+  // Normalize comments to always have an 'author' property
+  const normalizedComments = task.comments.map((comment) => ({
+    ...comment,
+    author: comment.author || comment.user,
+  }))
 
-    setIsLoading(true)
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !user) return;
+    if (!task.id) {
+      toast({
+        title: "Error",
+        description: "Task ID is missing. Cannot add comment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      const comment = await taskService.addComment(task.id, newComment, user.id)
+      // Backend returns the full comments array
+      const comments = await taskService.addComment(task.id, newComment, user.id);
 
       const updatedTask = {
         ...task,
-        comments: [...task.comments, comment],
+        comments, // replace with full array
         updatedAt: new Date().toISOString(),
-      }
+      };
 
-      onCommentAdded(updatedTask)
-      setNewComment("")
+      onCommentAdded(updatedTask);
+      setNewComment("");
 
       toast({
         title: "Comment added",
         description: "Your comment has been added successfully.",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to add comment. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -62,11 +77,11 @@ export function TaskComments({ task, onCommentAdded }: TaskCommentsProps) {
 
       {/* Comments List */}
       <div className="space-y-3 max-h-60 overflow-y-auto">
-        {task.comments.length === 0 ? (
+        {normalizedComments.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-4">No comments yet. Be the first to comment!</p>
         ) : (
-          task.comments.map((comment) => (
-            <div key={comment.id} className="flex space-x-3">
+          normalizedComments.map((comment, idx) => (
+            <div key={comment.id ?? comment._id ?? idx} className="flex space-x-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={comment.author.avatar || "/placeholder.svg"} />
                 <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
@@ -91,7 +106,7 @@ export function TaskComments({ task, onCommentAdded }: TaskCommentsProps) {
           placeholder="Add a comment..."
           rows={3}
         />
-        <Button onClick={handleAddComment} disabled={!newComment.trim() || isLoading} size="sm">
+        <Button onClick={handleAddComment} disabled={!newComment.trim() || isLoading || !task.id} size="sm">
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
           Add Comment
         </Button>

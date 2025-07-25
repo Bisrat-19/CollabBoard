@@ -49,18 +49,33 @@ export function EnhancedDashboard() {
 
   const loadProjects = async () => {
     try {
-      const data = await projectService.getProjects()
-      setProjects(data)
+      const data = await projectService.getProjects();
+      // Map _id to id for all projects
+      const mapped = data.map((p: any) => ({
+        id: p.id || p._id,
+        name: p.name,
+        description: p.description,
+        members: p.members,
+        ownerId: p.ownerId,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      }));
+      setProjects(mapped as Project[]);
     } catch (error) {
-      console.error("Failed to load projects:", error)
+      console.error("Failed to load projects:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
-  const handleProjectCreated = (project: Project) => {
-    setProjects((prev) => [...prev, project])
-    setShowCreateDialog(false)
+  const handleProjectCreated = (project: any) => {
+    // Ensure the new project has an 'id' property
+    const mappedProject = {
+      ...project,
+      id: project.id || project._id,
+    };
+    setProjects((prev) => [...prev, mappedProject]);
+    setShowCreateDialog(false);
   }
 
   const handleManageMembers = (project: Project) => {
@@ -401,11 +416,11 @@ export function EnhancedDashboard() {
                         : "space-y-4"
                     }
                   >
-                    {projects.map((project) =>
+                    {projects.map((project, index) =>
                       viewMode === "grid" ? (
-                        <ProjectCard key={project._id} project={project} />
+                        <ProjectCard key={project.id ?? project._id ?? index} project={project} />
                       ) : (
-                        <ProjectListItem key={project._id} project={project} />
+                        <ProjectListItem key={project.id ?? project._id ?? index} project={project} />
                       ),
                     )}
                   </div>
@@ -444,7 +459,7 @@ export function EnhancedDashboard() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                   {projects.map((project, index) => (
-                    <ProjectCard key={project.id ?? `project-${index}`} project={project} />
+                    <ProjectCard key={project.id ?? project._id ?? index} project={project} />
                   ))}
                 </div>
               )}

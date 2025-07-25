@@ -44,9 +44,9 @@ export function TaskColumn({ column, onTaskClick, onCreateTask }: TaskColumnProp
 
         {/* Scrollable Task List */}
         <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
-          {column.tasks.map((task) => (
+          {column.tasks.map((task, idx) => (
             <Card
-              key={task.id}
+              key={task.id ? task.id : `task-${idx}`}
               className={`task-card priority-${task.priority} hover:scale-105`}
               onClick={() => onTaskClick(task)}
             >
