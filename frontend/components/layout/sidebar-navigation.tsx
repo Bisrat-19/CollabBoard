@@ -60,22 +60,22 @@ export function SidebarNavigation({
         variant="ghost"
         size="sm"
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-4 left-4 z-50 lg:hidden bg-white shadow-md hover:bg-purple-50 hover:text-purple-600"
+        className="fixed top-4 right-4 z-50 md:hidden bg-white shadow-md hover:bg-purple-50 hover:text-purple-600"
       >
-        {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        <Menu className="h-5 w-5" />
       </Button>
 
       {/* Mobile Overlay */}
       {isMobileOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setIsMobileOpen(false)} />
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setIsMobileOpen(false)} />
       )}
 
       {/* Sidebar */}
       <div
         className={`${
           isCollapsed ? "w-20" : "w-80"
-        } bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 text-white flex-col h-screen transition-all duration-300 ease-in-out relative
-        ${isMobileOpen ? "fixed left-0 top-0 z-50 flex" : "hidden lg:flex"}
+        } bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 text-white flex-col h-screen transition-all duration-300 ease-in-out
+        ${isMobileOpen ? "fixed left-0 top-0 z-50 flex" : "hidden md:flex md:relative"}
         `}
       >
         {/* Collapse/Expand Button - Desktop Only */}
@@ -83,7 +83,7 @@ export function SidebarNavigation({
           variant="ghost"
           size="sm"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-6 z-10 bg-white text-purple-600 hover:bg-purple-50 hover:text-purple-700 rounded-full w-6 h-6 p-0 shadow-lg border border-purple-200 hidden lg:flex"
+          className="absolute -right-3 top-6 z-10 bg-white text-purple-600 hover:bg-purple-50 hover:text-purple-700 rounded-full w-6 h-6 p-0 shadow-lg border border-purple-200 hidden md:flex"
         >
           {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </Button>

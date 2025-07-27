@@ -344,7 +344,7 @@ export function EnhancedDashboard() {
 
   return (
     <>
-      <div className="h-screen bg-gray-50 flex">
+      <div className="h-screen bg-gray-50 md:flex relative">
         <SidebarNavigation
           activeView={activeView}
           onViewChange={handleViewChange}
@@ -352,7 +352,7 @@ export function EnhancedDashboard() {
           onShowAdminPanel={() => setShowAdminPanel(true)}
         />
 
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+        <main className="w-full md:flex-1 h-full p-4 lg:p-8 overflow-y-auto">
           {activeView === "dashboard" && (
             <>
               {/* Header */}
@@ -378,60 +378,60 @@ export function EnhancedDashboard() {
               </div>
 
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
                 <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
-                  <CardContent className="p-4 lg:p-6">
+                  <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-purple-100 text-xs lg:text-sm font-medium">Total Projects</p>
-                        <p className="text-2xl lg:text-3xl font-bold">{projects.length}</p>
+                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{projects.length}</p>
                       </div>
-                      <div className="bg-white/20 p-2 lg:p-3 rounded-xl">
-                        <TrendingUp className="h-4 w-4 lg:h-6 lg:w-6" />
+                      <div className="bg-white/20 p-1.5 sm:p-2 lg:p-3 rounded-xl">
+                        <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
-                  <CardContent className="p-4 lg:p-6">
+                  <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-blue-100 text-xs lg:text-sm font-medium">Active Tasks</p>
-                        <p className="text-2xl lg:text-3xl font-bold">{activeTasks}</p>
+                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{activeTasks}</p>
                       </div>
-                      <div className="bg-white/20 p-2 lg:p-3 rounded-xl">
-                        <Clock className="h-4 w-4 lg:h-6 lg:w-6" />
+                      <div className="bg-white/20 p-1.5 sm:p-2 lg:p-3 rounded-xl">
+                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0">
-                  <CardContent className="p-4 lg:p-6">
+                  <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-emerald-100 text-xs lg:text-sm font-medium">Completed</p>
-                        <p className="text-2xl lg:text-3xl font-bold">{completedTasks}</p>
+                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{completedTasks}</p>
                       </div>
-                      <div className="bg-white/20 p-2 lg:p-3 rounded-xl">
-                        <Star className="h-4 w-4 lg:h-6 lg:w-6" />
+                      <div className="bg-white/20 p-1.5 sm:p-2 lg:p-3 rounded-xl">
+                        <Star className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card className="bg-gradient-to-br from-amber-500 to-orange-500 text-white border-0">
-                  <CardContent className="p-4 lg:p-6">
+                  <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-amber-100 text-xs lg:text-sm font-medium">Team Members</p>
-                        <p className="text-2xl lg:text-3xl font-bold">
+                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">
                           {collaboratingUsers.length}
                         </p>
                       </div>
-                      <div className="bg-white/20 p-2 lg:p-3 rounded-xl">
-                        <Users className="h-4 w-4 lg:h-6 lg:w-6" />
+                      <div className="bg-white/20 p-1.5 sm:p-2 lg:p-3 rounded-xl">
+                        <Users className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6" />
                       </div>
                     </div>
                   </CardContent>

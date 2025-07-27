@@ -129,15 +129,15 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl sm:max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Task Details</DialogTitle>
-          <DialogDescription>View and edit the details of this task, including comments and assignments.</DialogDescription>
+          <DialogTitle className="text-lg sm:text-xl font-bold">Task Details</DialogTitle>
+          <DialogDescription className="text-sm sm:text-base">View and edit the details of this task, including comments and assignments.</DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content - Left Column */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title" className="text-sm font-medium">Title</Label>
@@ -145,7 +145,7 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                 id="title"
                 value={editedTask.title}
                 onChange={(e) => setEditedTask((prev) => ({ ...prev, title: e.target.value }))}
-                className="text-lg font-medium"
+                className="text-base sm:text-lg font-medium"
               />
             </div>
 
@@ -161,7 +161,8 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                     description: e.target.value,
                   }))
                 }
-                rows={6}
+                rows={4}
+                className="min-h-[100px] sm:min-h-[120px]"
                 placeholder="Describe the task in detail..."
               />
             </div>
@@ -188,7 +189,7 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
               />
               <div className="flex flex-wrap gap-2 mt-2">
                 {editedTask.labels.map((label) => (
-                  <Badge key={label} variant="secondary" className="bg-purple-100 text-purple-800">
+                  <Badge key={label} variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
                     {label}
                   </Badge>
                 ))}
@@ -196,17 +197,17 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
             </div>
 
             {/* Comments Section */}
-            <div className="border-t pt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MessageCircle className="h-5 w-5 text-gray-500" />
-                <h3 className="text-lg font-semibold">Comments</h3>
+            <div className="border-t pt-4 sm:pt-6">
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+                <h3 className="text-base sm:text-lg font-semibold">Comments</h3>
               </div>
               <TaskComments task={editedTask} onCommentAdded={handleCommentAdded} />
             </div>
           </div>
 
           {/* Sidebar - Right Column */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Status */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Status</Label>
@@ -225,7 +226,7 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                   <SelectItem value="done">Done</SelectItem>
                 </SelectContent>
               </Select>
-              <Badge className={`w-full justify-center ${getStatusColor(editedTask.status)}`}>
+              <Badge className={`w-full justify-center text-xs sm:text-sm ${getStatusColor(editedTask.status)}`}>
                 {editedTask.status === "todo" ? "To Do" : 
                  editedTask.status === "in-progress" ? "In Progress" : "Done"}
               </Badge>
@@ -249,7 +250,7 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                   <SelectItem value="high">High</SelectItem>
                 </SelectContent>
               </Select>
-              <Badge className={`w-full justify-center ${getPriorityColor(editedTask.priority)}`}>
+              <Badge className={`w-full justify-center text-xs sm:text-sm ${getPriorityColor(editedTask.priority)}`}>
                 {editedTask.priority.charAt(0).toUpperCase() + editedTask.priority.slice(1)}
               </Badge>
             </div>
@@ -272,22 +273,22 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                   <SelectValue placeholder="Select assignee">
                     {editedTask.assignedTo ? (
                       <div className="flex items-center">
-                        <Avatar className="h-6 w-6 mr-2">
+                        <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
                           <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
                             {editedTask.assignedTo.name.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <div className="font-medium">{editedTask.assignedTo.name}</div>
-                          <div className="text-xs text-gray-500">{editedTask.assignedTo.email}</div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm truncate">{editedTask.assignedTo.name}</div>
+                          <div className="text-xs text-gray-500 truncate">{editedTask.assignedTo.email}</div>
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-center text-gray-500">
-                        <div className="h-6 w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
+                        <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
                           <UserIcon className="h-3 w-3" />
                         </div>
-                        Unassigned
+                        <span className="text-sm">Unassigned</span>
                       </div>
                     )}
                   </SelectValue>
@@ -295,24 +296,24 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                 <SelectContent>
                   <SelectItem value="unassigned">
                     <div className="flex items-center">
-                      <div className="h-6 w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
+                      <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
                         <UserIcon className="h-3 w-3 text-gray-500" />
                       </div>
-                      Unassigned
+                      <span className="text-sm">Unassigned</span>
                     </div>
                   </SelectItem>
                   {projectMembers.map((member, idx) => (
                     <SelectItem key={member.id || `member-${idx}`} value={member.id}>
                       <div className="flex items-center">
-                        <Avatar className="h-6 w-6 mr-2">
+                        <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
                           <AvatarImage src={member.avatar || "/placeholder.svg"} />
                           <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs">
                             {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <div className="font-medium">{member.name}</div>
-                          <div className="text-xs text-gray-500">{member.email}</div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm truncate">{member.name}</div>
+                          <div className="text-xs text-gray-500 truncate">{member.email}</div>
                         </div>
                       </div>
                     </SelectItem>
@@ -344,14 +345,14 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
             <div className="space-y-2">
               <Label className="text-sm font-medium">Created By</Label>
               <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold">
+                <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold text-xs sm:text-sm">
                     {editedTask.createdBy.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className="font-medium text-gray-900">{editedTask.createdBy.name}</p>
-                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 text-sm truncate">{editedTask.createdBy.name}</p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {new Date(editedTask.createdAt).toLocaleDateString()}
                   </p>

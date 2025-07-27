@@ -100,17 +100,17 @@ export function CreateTaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-purple-600" />
+          <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
             Create New Task
           </DialogTitle>
-          <DialogDescription>Add a new task to the project board with all necessary details.</DialogDescription>
+          <DialogDescription className="text-sm sm:text-base">Add a new task to the project board with all necessary details.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-6 py-4">
+          <div className="grid gap-4 sm:gap-6 py-4">
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title" className="text-sm font-medium">Title *</Label>
@@ -120,7 +120,7 @@ export function CreateTaskDialog({
                 onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                 placeholder="Enter task title"
                 required
-                className="text-lg"
+                className="text-base sm:text-lg"
               />
             </div>
 
@@ -132,12 +132,13 @@ export function CreateTaskDialog({
                 value={formData.description}
                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder="Describe the task in detail..."
-                rows={4}
+                rows={3}
+                className="min-h-[80px] sm:min-h-[100px]"
               />
             </div>
 
             {/* Priority and Assignment */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Priority</Label>
                 <Select
@@ -155,7 +156,7 @@ export function CreateTaskDialog({
                     <SelectItem value="high">High</SelectItem>
                   </SelectContent>
                 </Select>
-                <Badge className={`w-full justify-center ${getPriorityColor(formData.priority)}`}>
+                <Badge className={`w-full justify-center text-xs sm:text-sm ${getPriorityColor(formData.priority)}`}>
                   {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)}
                 </Badge>
               </div>
@@ -174,12 +175,12 @@ export function CreateTaskDialog({
                             const member = projectMembers.find((m) => m.id === formData.assignedToId)
                             return member ? (
                               <>
-                                <Avatar className="h-6 w-6 mr-2">
+                                <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
                                   <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
                                     {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span>{member.name}</span>
+                                <span className="text-sm truncate">{member.name}</span>
                               </>
                             ) : null
                           })()}
@@ -190,23 +191,23 @@ export function CreateTaskDialog({
                   <SelectContent>
                     <SelectItem value="unassigned">
                       <div className="flex items-center">
-                        <div className="h-6 w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
+                        <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
                           <UserIcon className="h-3 w-3 text-gray-500" />
                         </div>
-                        Unassigned
+                        <span className="text-sm">Unassigned</span>
                       </div>
                     </SelectItem>
                     {projectMembers.map((member, idx) => (
                       <SelectItem key={member.id || `member-${idx}`} value={member.id}>
                         <div className="flex items-center">
-                          <Avatar className="h-6 w-6 mr-2">
+                          <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
                             <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
                               {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <div className="font-medium">{member.name}</div>
-                            <div className="text-xs text-gray-500">{member.email}</div>
+                          <div className="min-w-0">
+                            <div className="font-medium text-sm truncate">{member.name}</div>
+                            <div className="text-xs text-gray-500 truncate">{member.email}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -257,7 +258,7 @@ export function CreateTaskDialog({
               />
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.labels.map((label) => (
-                  <Badge key={label} variant="secondary" className="bg-purple-100 text-purple-800">
+                  <Badge key={label} variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
                     {label}
                   </Badge>
                 ))}
@@ -265,14 +266,14 @@ export function CreateTaskDialog({
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="gap-2 flex-col sm:flex-row">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={isLoading || !formData.title.trim()}
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Task
