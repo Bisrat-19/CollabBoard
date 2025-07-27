@@ -221,9 +221,9 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todo">To Do</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="done">Done</SelectItem>
+                  <SelectItem key="todo" value="todo">To Do</SelectItem>
+                  <SelectItem key="in-progress" value="in-progress">In Progress</SelectItem>
+                  <SelectItem key="done" value="done">Done</SelectItem>
                 </SelectContent>
               </Select>
               <Badge className={`w-full justify-center text-xs sm:text-sm ${getStatusColor(editedTask.status)}`}>
@@ -245,9 +245,9 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem key="low" value="low">Low</SelectItem>
+                  <SelectItem key="medium" value="medium">Medium</SelectItem>
+                  <SelectItem key="high" value="high">High</SelectItem>
                 </SelectContent>
               </Select>
               <Badge className={`w-full justify-center text-xs sm:text-sm ${getPriorityColor(editedTask.priority)}`}>
@@ -294,7 +294,7 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unassigned">
+                  <SelectItem key="unassigned" value="unassigned">
                     <div className="flex items-center">
                       <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
                         <UserIcon className="h-3 w-3 text-gray-500" />

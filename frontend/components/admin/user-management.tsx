@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { User } from "@/types"
+import { adminService } from "@/services/admin-service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Search, MoreHorizontal, UserPlus, Shield, UserIcon } from "lucide-react"
+import { Search, MoreHorizontal, UserPlus, Shield, UserIcon, Loader2, Plus, Users, Edit, Trash2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -22,49 +23,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { Label } from "@/components/ui/label"
 
-// Mock users data
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "admin@collabboard.com",
-    role: "admin",
-    avatar: "/placeholder.svg?height=40&width=40",
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "user@collabboard.com",
-    role: "user",
-    avatar: "/placeholder.svg?height=40&width=40",
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "3",
-    name: "Mike Johnson",
-    email: "mike@collabboard.com",
-    role: "user",
-    avatar: "/placeholder.svg?height=40&width=40",
-    createdAt: "2024-01-05T00:00:00Z",
-  },
-  {
-    id: "4",
-    name: "Sarah Wilson",
-    email: "sarah@collabboard.com",
-    role: "user",
-    avatar: "/placeholder.svg?height=40&width=40",
-    createdAt: "2024-01-10T00:00:00Z",
-  },
-]
-
 export function UserManagement() {
-  const [users, setUsers] = useState<User[]>(mockUsers)
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [showAddUserDialog, setShowAddUserDialog] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
+
+  // Form states for add/edit user
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "user" as "admin" | "user",
+  })
+
+  useEffect(() => {
+    loadUsers()
+  }, [])
+
+  const loadUsers = async () => {
+    try {
+      setIsLoading(true)
+      const usersData = await adminService.getAllUsers()
+      setUsers(usersData)
+    } catch (error) {
+      console.error("Failed to load users:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load users. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filteredUsers = users.filter(
     (user) =>
@@ -74,7 +70,8 @@ export function UserManagement() {
 
   const handleRoleChange = async (userId: string, newRole: "admin" | "user") => {
     try {
-      setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, role: newRole } : user)))
+      const updatedUser = await adminService.updateUser(userId, { role: newRole })
+      setUsers((prev) => prev.map((user) => (user.id === userId ? updatedUser : user)))
 
       toast({
         title: "Role updated",
@@ -91,6 +88,7 @@ export function UserManagement() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
+      await adminService.deleteUser(userId)
       setUsers((prev) => prev.filter((user) => user.id !== userId))
 
       toast({
@@ -106,139 +104,200 @@ export function UserManagement() {
     }
   }
 
-  const handleAddUser = async (userData: { name: string; email: string; role: "admin" | "user" }) => {
-    try {
-      const newUser: User = {
-        id: Date.now().toString(),
-        ...userData,
-        avatar: "/placeholder.svg?height=40&width=40",
-        createdAt: new Date().toISOString(),
-      }
-
-      setUsers((prev) => [...prev, newUser])
-      setShowAddUserDialog(false)
-
-      toast({
-        title: "User added",
-        description: `${newUser.name} has been added successfully.`,
-      })
-    } catch (error) {
+  const handleAddUser = async () => {
+    if (!formData.name || !formData.email || !formData.password) {
       toast({
         title: "Error",
-        description: "Failed to add user. Please try again.",
+        description: "Please fill in all required fields.",
         variant: "destructive",
       })
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const newUser = await adminService.createUser(formData)
+      setUsers((prev) => [...prev, newUser])
+      setShowAddUserDialog(false)
+      setFormData({ name: "", email: "", password: "", role: "user" })
+
+      toast({
+        title: "User created",
+        description: "User has been created successfully.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create user. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleEditUser = (user: User) => {
     setEditingUser(user)
+    setFormData({
+      name: user.name,
+      email: user.email,
+      password: "",
+      role: user.role,
+    })
     setShowEditDialog(true)
   }
 
-  const handleUpdateUser = async (userData: { name: string; email: string; role: "admin" | "user" }) => {
-    if (!editingUser) return
+  const handleUpdateUser = async () => {
+    if (!editingUser || !formData.name || !formData.email) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      })
+      return
+    }
 
     try {
-      setUsers((prev) => prev.map((user) => (user.id === editingUser.id ? { ...user, ...userData } : user)))
+      setIsSubmitting(true)
+      const updateData: any = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+      }
 
+      const updatedUser = await adminService.updateUser(editingUser.id, updateData)
+      setUsers((prev) => prev.map((user) => (user.id === editingUser.id ? updatedUser : user)))
       setShowEditDialog(false)
       setEditingUser(null)
+      setFormData({ name: "", email: "", password: "", role: "user" })
 
       toast({
         title: "User updated",
-        description: "User information has been updated successfully.",
+        description: "User has been updated successfully.",
       })
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update user. Please try again.",
+        description: error.message || "Failed to update user. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>User Management</CardTitle>
-          <CardDescription>Manage user accounts, roles, and permissions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-6">
-            <div className="relative w-72">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Button onClick={() => setShowAddUserDialog(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add User
-            </Button>
-          </div>
+  const resetForm = () => {
+    setFormData({ name: "", email: "", password: "", role: "user" })
+    setEditingUser(null)
+  }
 
-          <div className="rounded-md border">
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">User Management</h2>
+          <p className="text-sm text-gray-600 mt-1">Manage user accounts and permissions</p>
+        </div>
+        <Button
+          onClick={() => setShowAddUserDialog(true)}
+          className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-sm"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add User
+        </Button>
+      </div>
+
+      {/* Users Table */}
+      <Card className="shadow-lg border-0">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg">
+          <CardTitle className="flex items-center">
+            <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-purple-600" />
+            All Users
+          </CardTitle>
+          <CardDescription className="text-xs sm:text-sm">View and manage user accounts</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-xs sm:text-sm">User</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Email</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden md:table-cell">Role</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Status</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Joined</TableHead>
+                  <TableHead className="text-xs sm:text-sm text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{user.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                        {user.role === "admin" ? (
-                          <Shield className="h-3 w-3 mr-1" />
-                        ) : (
-                          <UserIcon className="h-3 w-3 mr-1" />
-                        )}
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditUser(user)}>Edit User</DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleRoleChange(user.id, user.role === "admin" ? "user" : "admin")}
-                          >
-                            {user.role === "admin" ? "Remove Admin" : "Make Admin"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteUser(user.id)} className="text-red-600">
-                            Delete User
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                      <p className="mt-2 text-sm">Loading users...</p>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : users.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      <Users className="h-12 w-12 text-gray-400 mx-auto" />
+                      <p className="mt-2 text-sm text-gray-600">No users found</p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.avatar} />
+                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold text-sm">
+                              {user.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{user.name}</p>
+                            <p className="text-xs text-gray-500 sm:hidden">{user.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-xs sm:text-sm">{user.email}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Badge variant={user.role === "admin" ? "default" : "secondary"} className="text-xs">
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <Badge variant={user.isActive ? "default" : "secondary"} className="text-xs">
+                          {user.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-xs sm:text-sm">
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-32 sm:w-40">
+                            <DropdownMenuItem onClick={() => handleEditUser(user)} className="text-xs sm:text-sm">
+                              <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteUser(user.id)} className="text-xs sm:text-sm text-red-600">
+                              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -254,32 +313,31 @@ export function UserManagement() {
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              const formData = new FormData(e.currentTarget)
-              handleAddUser({
-                name: formData.get("name") as string,
-                email: formData.get("email") as string,
-                role: formData.get("role") as "admin" | "user",
-              })
+              handleAddUser()
             }}
           >
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" name="name" placeholder="John Doe" required />
+                <Input id="name" name="name" placeholder="John Doe" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" name="email" type="email" placeholder="john@example.com" required />
+                <Input id="email" name="email" type="email" placeholder="john@example.com" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" name="password" type="password" placeholder="Password" required value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="role">Role</Label>
-                <Select name="role" defaultValue="user">
+                <Select name="role" defaultValue="user" value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as "admin" | "user" })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem key="user" value="user">User</SelectItem>
+                    <SelectItem key="admin" value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -288,7 +346,10 @@ export function UserManagement() {
               <Button type="button" variant="outline" onClick={() => setShowAddUserDialog(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Add User</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {editingUser ? "Update User" : "Add User"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -305,32 +366,31 @@ export function UserManagement() {
             <form
               onSubmit={(e) => {
                 e.preventDefault()
-                const formData = new FormData(e.currentTarget)
-                handleUpdateUser({
-                  name: formData.get("name") as string,
-                  email: formData.get("email") as string,
-                  role: formData.get("role") as "admin" | "user",
-                })
+                handleUpdateUser()
               }}
             >
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label htmlFor="edit-name">Full Name</Label>
-                  <Input id="edit-name" name="name" defaultValue={editingUser.name} required />
+                  <Input id="edit-name" name="name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="edit-email">Email Address</Label>
-                  <Input id="edit-email" name="email" type="email" defaultValue={editingUser.email} required />
+                  <Input id="edit-email" name="email" type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-password">Password</Label>
+                  <Input id="edit-password" name="password" type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="edit-role">Role</Label>
-                  <Select name="role" defaultValue={editingUser.role}>
+                  <Select name="role" value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as "admin" | "user" })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem key="user" value="user">User</SelectItem>
+                      <SelectItem key="admin" value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -339,7 +399,10 @@ export function UserManagement() {
                 <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Update User</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Update User
+                </Button>
               </DialogFooter>
             </form>
           )}

@@ -86,6 +86,7 @@ export function EnhancedDashboard() {
       
       // Map _id to id for all projects
       const mappedProjects = (projectsData || []).map((p: any) => ({
+        _id: p._id,
         id: p.id || p._id,
         name: p.name,
         description: p.description,
@@ -99,32 +100,21 @@ export function EnhancedDashboard() {
       const mappedTasks = (tasksData || []).map((t: any) => ({
         ...t,
         id: t.id || t._id,
-        project: t.project ? {
-          id: t.project._id || t.project.id,
-          _id: t.project._id,
-          name: t.project.name,
-          description: t.project.description,
-        } : undefined,
       }))
       
-      console.log("Mapped projects:", mappedProjects)
-      console.log("Mapped tasks:", mappedTasks)
-      console.log("Project IDs:", mappedProjects.map(p => p.id))
-      console.log("Task project IDs:", mappedTasks.map(t => t.project?.id).filter(Boolean))
-      console.log("Sample task with project:", mappedTasks.find(t => t.project))
-      
-      setProjects(mappedProjects as Project[])
-      setTasks(mappedTasks as Task[])
+      setProjects(mappedProjects)
+      setTasks(mappedTasks)
       setCollaboratingUsers(collaboratingUsersData || [])
     } catch (error) {
-      console.error("Failed to load data:", error)
-      // Set empty arrays as fallback
-      setProjects([])
-      setTasks([])
-      setCollaboratingUsers([])
+      console.error("Error loading data:", error)
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Function to refresh data (can be called from other components)
+  const refreshData = () => {
+    loadData()
   }
 
   const handleProjectCreated = (project: any) => {
@@ -200,7 +190,7 @@ export function EnhancedDashboard() {
   }
 
   if (showAdminPanel && user?.role === "admin") {
-    return <AdminPanel onBack={() => setShowAdminPanel(false)} />
+    return <AdminPanel onBack={() => setShowAdminPanel(false)} onRefresh={refreshData} />
   }
 
   const ProjectCard = ({ project }: { project: Project }) => (

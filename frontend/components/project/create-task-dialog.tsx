@@ -151,9 +151,9 @@ export function CreateTaskDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem key="low" value="low">Low</SelectItem>
+                    <SelectItem key="medium" value="medium">Medium</SelectItem>
+                    <SelectItem key="high" value="high">High</SelectItem>
                   </SelectContent>
                 </Select>
                 <Badge className={`w-full justify-center text-xs sm:text-sm ${getPriorityColor(formData.priority)}`}>
@@ -189,7 +189,7 @@ export function CreateTaskDialog({
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="unassigned">
+                    <SelectItem key="unassigned" value="unassigned">
                       <div className="flex items-center">
                         <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
                           <UserIcon className="h-3 w-3 text-gray-500" />

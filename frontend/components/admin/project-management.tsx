@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Project } from "@/types"
+import { adminService } from "@/services/admin-service"
 import { projectService } from "@/services/project-service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
-import { Search, MoreHorizontal, FolderPlus, Trash2, Edit } from "lucide-react"
+import { Search, MoreHorizontal, FolderPlus, Trash2, Edit, Loader2, FolderOpen } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -26,14 +27,44 @@ import { Textarea } from "@/components/ui/textarea"
 interface ProjectManagementProps {
   projects: Project[]
   onProjectsChange: (projects: Project[]) => void
+  onRefresh?: () => void
 }
 
-export function ProjectManagement({ projects, onProjectsChange }: ProjectManagementProps) {
+export function ProjectManagement({ projects, onProjectsChange, onRefresh }: ProjectManagementProps) {
   const [searchTerm, setSearchTerm] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
+
+  // Form states for add/edit project
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+  })
+
+  useEffect(() => {
+    loadProjects()
+  }, [])
+
+  const loadProjects = async () => {
+    try {
+      setIsLoading(true)
+      const projectsData = await adminService.getAllProjects()
+      onProjectsChange(projectsData)
+    } catch (error) {
+      console.error("Failed to load projects:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load projects. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filteredProjects = projects.filter(
     (project) =>
@@ -43,169 +74,218 @@ export function ProjectManagement({ projects, onProjectsChange }: ProjectManagem
 
   const handleDeleteProject = async (projectId: string) => {
     try {
-      await projectService.deleteProject(projectId)
+      await adminService.deleteProject(projectId)
       onProjectsChange(projects.filter((p) => p.id !== projectId))
+      onRefresh?.()
 
       toast({
         title: "Project deleted",
         description: "Project has been deleted successfully.",
       })
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to delete project. Please try again.",
+        description: error.message || "Failed to delete project. Please try again.",
         variant: "destructive",
       })
     }
   }
 
-  const handleCreateProject = async (projectData: { name: string; description: string }) => {
-    try {
-      const newProject: Project = {
-        id: Date.now().toString(),
-        ...projectData,
-        ownerId: "1", // In a real app, this would be the current admin's ID
-        members: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
+  const handleCreateProject = async () => {
+    if (!formData.name || !formData.description) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      })
+      return
+    }
 
-      const updatedProjects = [...projects, newProject]
-      onProjectsChange(updatedProjects)
+    try {
+      setIsSubmitting(true)
+      const newProject = await adminService.createProject(formData)
+      onProjectsChange([...projects, newProject])
+      onRefresh?.()
       setShowCreateDialog(false)
+      setFormData({ name: "", description: "" })
 
       toast({
         title: "Project created",
-        description: `${newProject.name} has been created successfully.`,
+        description: "Project has been created successfully.",
       })
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to create project. Please try again.",
+        description: error.message || "Failed to create project. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleEditProject = (project: Project) => {
     setEditingProject(project)
+    setFormData({
+      name: project.name,
+      description: project.description,
+    })
     setShowEditDialog(true)
   }
 
-  const handleUpdateProject = async (projectData: { name: string; description: string }) => {
-    if (!editingProject) return
+  const handleUpdateProject = async () => {
+    if (!editingProject || !formData.name || !formData.description) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      })
+      return
+    }
 
     try {
-      const updatedProject = {
-        ...editingProject,
-        ...projectData,
-        updatedAt: new Date().toISOString(),
-      }
-
-      const updatedProjects = projects.map((p) => (p.id === editingProject.id ? updatedProject : p))
-
-      onProjectsChange(updatedProjects)
+      setIsSubmitting(true)
+      const updatedProject = await adminService.updateProject(editingProject.id, formData)
+      onProjectsChange(projects.map((p) => (p.id === editingProject.id ? updatedProject : p)))
+      onRefresh?.()
       setShowEditDialog(false)
       setEditingProject(null)
+      setFormData({ name: "", description: "" })
 
       toast({
         title: "Project updated",
         description: "Project has been updated successfully.",
       })
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update project. Please try again.",
+        description: error.message || "Failed to update project. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Project Management</CardTitle>
-          <CardDescription>Manage all projects, members, and project settings</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-6">
-            <div className="relative w-72">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search projects..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <FolderPlus className="h-4 w-4 mr-2" />
-              Create Project
-            </Button>
-          </div>
+  const resetForm = () => {
+    setFormData({ name: "", description: "" })
+    setEditingProject(null)
+  }
 
-          <div className="rounded-md border">
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Project Management</h2>
+          <p className="text-sm text-gray-600 mt-1">Manage all projects and their settings</p>
+        </div>
+        <Button
+          onClick={() => setShowCreateDialog(true)}
+          className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-sm"
+        >
+          <FolderPlus className="h-4 w-4 mr-2" />
+          Create Project
+        </Button>
+      </div>
+
+      {/* Projects Table */}
+      <Card className="shadow-lg border-0">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg">
+          <CardTitle className="flex items-center">
+            <FolderOpen className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-purple-600" />
+            All Projects
+          </CardTitle>
+          <CardDescription className="text-xs sm:text-sm">View and manage all projects</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Members</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Project</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Description</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden md:table-cell">Members</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Created</TableHead>
+                  <TableHead className="text-xs sm:text-sm text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProjects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{project.name}</div>
-                        <div className="text-sm text-gray-600 line-clamp-1">{project.description}</div>
-                      </div>
+                {isLoading ? (
+                  <TableRow key="loading">
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                      <p className="mt-2 text-sm">Loading projects...</p>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <div className="flex -space-x-2">
-                          {project.members.slice(0, 3).map((member) => (
-                            <Avatar key={member.id} className="h-6 w-6 border-2 border-white">
-                              <AvatarImage src={member.avatar || "/placeholder.svg"} />
-                              <AvatarFallback className="text-xs">{member.name.charAt(0)}</AvatarFallback>
+                  </TableRow>
+                ) : projects.length === 0 ? (
+                  <TableRow key="no-projects">
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <FolderOpen className="h-12 w-12 text-gray-400 mx-auto" />
+                      <p className="mt-2 text-sm text-gray-600">No projects found</p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  projects.map((project, index) => (
+                    <TableRow key={project.id || `project-${index}`}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                            <FolderOpen className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{project.name}</p>
+                            <p className="text-xs text-gray-500 sm:hidden line-clamp-1">{project.description}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-xs sm:text-sm">
+                        <p className="line-clamp-2">{project.description}</p>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex -space-x-1 sm:-space-x-2">
+                          {project.members.slice(0, 3).map((member, memberIndex) => (
+                            <Avatar key={member.id || `member-${memberIndex}`} className="h-6 w-6 border-2 border-white">
+                              <AvatarImage src={member.avatar} />
+                              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold text-xs">
+                                {member.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
                             </Avatar>
                           ))}
                           {project.members.length > 3 && (
                             <div className="h-6 w-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
-                              <span className="text-xs text-gray-600">+{project.members.length - 3}</span>
+                              <span className="text-xs text-gray-600 font-medium">
+                                +{project.members.length - 3}
+                              </span>
                             </div>
                           )}
                         </div>
-                        <Badge variant="secondary">{project.members.length}</Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>{new Date(project.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>{new Date(project.updatedAt).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditProject(project)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Project
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteProject(project.id)} className="text-red-600">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Project
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-xs sm:text-sm">
+                        {new Date(project.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-32 sm:w-40">
+                            <DropdownMenuItem onClick={() => handleEditProject(project)} className="text-xs sm:text-sm">
+                              <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteProject(project.id)} className="text-xs sm:text-sm text-red-600">
+                              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -221,17 +301,21 @@ export function ProjectManagement({ projects, onProjectsChange }: ProjectManagem
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              const formData = new FormData(e.currentTarget)
-              handleCreateProject({
-                name: formData.get("name") as string,
-                description: formData.get("description") as string,
-              })
+              handleCreateProject()
             }}
           >
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="project-name">Project Name</Label>
-                <Input id="project-name" name="name" placeholder="Enter project name" required />
+                <Input
+                  id="project-name"
+                  name="name"
+                  placeholder="Enter project name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="project-description">Description</Label>
@@ -239,16 +323,22 @@ export function ProjectManagement({ projects, onProjectsChange }: ProjectManagem
                   id="project-description"
                   name="description"
                   placeholder="Describe your project"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
+              <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit">Create Project</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FolderPlus className="h-4 w-4 mr-2" />}
+                {isSubmitting ? "Creating..." : "Create Project"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -265,34 +355,42 @@ export function ProjectManagement({ projects, onProjectsChange }: ProjectManagem
             <form
               onSubmit={(e) => {
                 e.preventDefault()
-                const formData = new FormData(e.currentTarget)
-                handleUpdateProject({
-                  name: formData.get("name") as string,
-                  description: formData.get("description") as string,
-                })
+                handleUpdateProject()
               }}
             >
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label htmlFor="edit-project-name">Project Name</Label>
-                  <Input id="edit-project-name" name="name" defaultValue={editingProject.name} required />
+                  <Input
+                    id="edit-project-name"
+                    name="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="edit-project-description">Description</Label>
                   <Textarea
                     id="edit-project-description"
                     name="description"
-                    defaultValue={editingProject.description}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>
+                <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)} disabled={isSubmitting}>
                   Cancel
                 </Button>
-                <Button type="submit">Update Project</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Edit className="h-4 w-4 mr-2" />}
+                  {isSubmitting ? "Updating..." : "Update Project"}
+                </Button>
               </DialogFooter>
             </form>
           )}

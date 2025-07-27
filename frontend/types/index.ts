@@ -7,6 +7,7 @@ export interface User {
   role: "admin" | "user"
   avatar?: string
   createdAt: string
+  isActive?: boolean
 }
 
 export interface Project {
