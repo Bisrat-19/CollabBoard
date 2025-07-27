@@ -64,9 +64,8 @@ export function TaskColumn({ column, onTaskClick, onCreateTask }: TaskColumnProp
                   {task.assignedTo && (
                     <div className="flex items-center space-x-2 p-2 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg">
                       <Avatar className="h-6 w-6 ring-2 ring-white">
-                        <AvatarImage src={task.assignedTo.avatar || "/placeholder.svg"} alt={task.assignedTo.name} />
-                        <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-                          {task.assignedTo.name.charAt(0)}
+                        <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold">
+                          {task.assignedTo.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-xs font-medium text-gray-700">Assigned to {task.assignedTo.name}</span>

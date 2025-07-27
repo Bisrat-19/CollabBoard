@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middlewares/authMiddleware');
 const {
+  getAllTasksForUser,
   getTaskById,
   updateTask,
   deleteTask,
@@ -9,6 +10,7 @@ const {
   deleteComment,
 } = require('../controllers/taskController');
 
+router.get('/', protect, getAllTasksForUser);
 router.get('/:taskId', protect, getTaskById);
 router.put('/:taskId', protect, updateTask);
 router.delete('/:taskId', protect, deleteTask);

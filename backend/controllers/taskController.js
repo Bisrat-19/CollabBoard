@@ -1,12 +1,38 @@
 const Task = require('../models/Task');
 
+// Get all tasks for the current user across all projects
+exports.getAllTasksForUser = async (req, res) => {
+  try {
+    // First get all projects where the user is a member
+    const Project = require('../models/Project');
+    const userProjects = await Project.find({
+      members: req.user._id,
+    });
+
+    const projectIds = userProjects.map(project => project._id);
+
+    // Get all tasks from these projects
+    const tasks = await Task.find({ project: { $in: projectIds } })
+      .populate('project', '_id name description')
+      .populate('assignedTo', 'name email role avatar createdAt')
+      .populate('createdBy', 'name email role avatar createdAt')
+      .populate('comments.user', 'name email role avatar createdAt')
+      .exec();
+
+    res.status(200).json(tasks);
+  } catch (err) {
+    console.error('GetAllTasksForUser error:', err);
+    res.status(500).json({ message: 'Failed to get tasks' });
+  }
+};
+
 // Get all tasks for a project
 exports.getTasksByProject = async (req, res) => {
   try {
     const tasks = await Task.find({ project: req.params.projectId })
-      .populate('assignedTo', 'name email')
-      .populate('createdBy', 'name email')
-      .populate('comments.user', 'name email')
+      .populate('assignedTo', 'name email role avatar createdAt')
+      .populate('createdBy', 'name email role avatar createdAt')
+      .populate('comments.user', 'name email role avatar createdAt')
       .exec();
 
     res.status(200).json(tasks);
@@ -37,9 +63,9 @@ exports.createTask = async (req, res) => {
 
     // Populate before returning
     const populatedTask = await Task.findById(savedTask._id)
-    .populate('assignedTo', 'name email')
-    .populate('createdBy', 'name email')
-    .populate('comments.user', 'name email');
+    .populate('assignedTo', 'name email role avatar createdAt')
+    .populate('createdBy', 'name email role avatar createdAt')
+    .populate('comments.user', 'name email role avatar createdAt');
 
   res.status(201).json(populatedTask);
   } catch (err) {
@@ -52,9 +78,9 @@ exports.createTask = async (req, res) => {
 exports.getTaskById = async (req, res) => {
   try {
     const task = await Task.findById(req.params.taskId)
-      .populate('assignedTo', 'name email')
-      .populate('createdBy', 'name email')
-      .populate('comments.user', 'name email')
+      .populate('assignedTo', 'name email role avatar createdAt')
+      .populate('createdBy', 'name email role avatar createdAt')
+      .populate('comments.user', 'name email role avatar createdAt')
       .exec();
 
     if (!task) return res.status(404).json({ message: 'Task not found' });
@@ -69,9 +95,9 @@ exports.getTaskById = async (req, res) => {
 exports.updateTask = async (req, res) => {
   try {
     const updatedTask = await Task.findByIdAndUpdate(req.params.taskId, req.body, { new: true })
-      .populate('assignedTo', 'name email')
-      .populate('createdBy', 'name email')
-      .populate('comments.user', 'name email')
+      .populate('assignedTo', 'name email role avatar createdAt')
+      .populate('createdBy', 'name email role avatar createdAt')
+      .populate('comments.user', 'name email role avatar createdAt')
       .exec();
 
     if (!updatedTask) return res.status(404).json({ message: 'Task not found' });
@@ -118,7 +144,7 @@ exports.addComment = async (req, res) => {
 
     await task.populate({
       path: "comments.user",
-      select: "name email",
+      select: "name email role avatar createdAt",
     });
 
     res.status(201).json(task.comments);

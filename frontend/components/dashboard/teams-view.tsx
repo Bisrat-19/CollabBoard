@@ -8,25 +8,20 @@ import { Users, Crown, UserIcon } from "lucide-react"
 
 interface TeamsViewProps {
   projects: Project[]
+  collaboratingUsers: CollaboratingUser[]
 }
 
-export function TeamsView({ projects }: TeamsViewProps) {
-  // Get all unique team members across projects
-  const allMembers = projects.reduce(
-    (acc, project) => {
-      project.members.forEach((member) => {
-        if (!acc.find((m) => m.id === member.id)) {
-          acc.push({
-            ...member,
-            projectCount: projects.filter((p) => p.members.some((pm) => pm.id === member.id)).length,
-          })
-        }
-      })
-      return acc
-    },
-    [] as Array<any>,
-  )
+interface CollaboratingUser {
+  id: string
+  name: string
+  email: string
+  role: string
+  avatar?: string
+  createdAt: string
+  projectCount: number
+}
 
+export function TeamsView({ projects, collaboratingUsers }: TeamsViewProps) {
   return (
     <div>
       {/* Team Stats */}
@@ -36,7 +31,7 @@ export function TeamsView({ projects }: TeamsViewProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-100 text-xs lg:text-sm font-medium">Total Members</p>
-                <p className="text-2xl lg:text-3xl font-bold">{allMembers.length}</p>
+                <p className="text-2xl lg:text-3xl font-bold">{collaboratingUsers.length}</p>
               </div>
               <div className="bg-white/20 p-2 lg:p-3 rounded-xl">
                 <Users className="h-4 w-4 lg:h-6 lg:w-6" />
@@ -50,7 +45,7 @@ export function TeamsView({ projects }: TeamsViewProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-purple-100 text-xs lg:text-sm font-medium">Admins</p>
-                <p className="text-2xl lg:text-3xl font-bold">{allMembers.filter((m) => m.role === "admin").length}</p>
+                <p className="text-2xl lg:text-3xl font-bold">{collaboratingUsers.filter((m) => m.role === "admin").length}</p>
               </div>
               <div className="bg-white/20 p-2 lg:p-3 rounded-xl">
                 <Crown className="h-4 w-4 lg:h-6 lg:w-6" />
@@ -76,15 +71,13 @@ export function TeamsView({ projects }: TeamsViewProps) {
 
       {/* Team Members Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        {allMembers.map((member, idx) => (
+        {collaboratingUsers.map((member, idx) => (
           <Card key={member.id ?? idx} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center space-x-4">
-                <Avatar className="h-10 w-10 lg:h-12 lg:w-12">
-                  <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
-                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-                    {member?.name?.charAt(0) ?? "?"}
-
+                <Avatar className="h-12 w-12 ring-2 ring-white">
+                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold">
+                    {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">

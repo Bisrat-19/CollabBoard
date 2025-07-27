@@ -85,3 +85,40 @@ exports.deleteProject = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Get all collaborating users across projects
+exports.getCollaboratingUsers = async (req, res) => {
+  try {
+    // Get all projects where the current user is a member
+    const userProjects = await Project.find({
+      members: req.user._id,
+    }).populate('members', 'name email avatar role createdAt _id');
+
+    // Get all unique users from these projects
+    const allUsers = new Map();
+    
+    userProjects.forEach(project => {
+      project.members.forEach(member => {
+        const userId = member._id.toString();
+        if (!allUsers.has(userId)) {
+          allUsers.set(userId, {
+            ...member.toObject(),
+            id: member._id,
+            projectCount: 0
+          });
+        }
+        // Count how many projects this user is in
+        allUsers.get(userId).projectCount++;
+      });
+    });
+
+    // Convert map to array and sort by project count
+    const collaboratingUsers = Array.from(allUsers.values())
+      .sort((a, b) => b.projectCount - a.projectCount);
+
+    res.json(collaboratingUsers);
+  } catch (error) {
+    console.error('Error fetching collaborating users:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

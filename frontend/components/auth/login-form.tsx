@@ -26,9 +26,9 @@ export function LoginForm() {
     const email = formData.get("email") as string
     const password = formData.get("password") as string
 
-    const success = await login(email, password)
+    const result = await login(email, password)
 
-    if (success) {
+    if (result.success) {
       toast({
         title: "Welcome back! 🎉",
         description: "You have been successfully logged in.",
@@ -36,7 +36,7 @@ export function LoginForm() {
     } else {
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: result.error || "Please check your credentials and try again.",
         variant: "destructive",
       })
     }
@@ -53,9 +53,9 @@ export function LoginForm() {
     const email = formData.get("email") as string
     const password = formData.get("password") as string
 
-    const success = await register(name, email, password)
+    const result = await register(name, email, password)
 
-    if (success) {
+    if (result.success) {
       toast({
         title: "Account created! 🎉",
         description: "Welcome to CollabBoard. You can now start collaborating.",
@@ -63,7 +63,7 @@ export function LoginForm() {
     } else {
       toast({
         title: "Registration failed",
-        description: "Please try again with different credentials.",
+        description: result.error || "Please try again with different credentials.",
         variant: "destructive",
       })
     }

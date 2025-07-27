@@ -72,6 +72,15 @@ class ProjectService {
       throw new Error(err.message || "Failed to delete project")
     }
   }
+
+  async getCollaboratingUsers(): Promise<any[]> {
+    const res = await fetch(`${this.API_BASE}/collaborating-users`, {
+      headers: await this.getAuthHeaders(),
+    })
+
+    if (!res.ok) throw new Error("Failed to fetch collaborating users")
+    return res.json()
+  }
 }
 
 export const projectService = new ProjectService()

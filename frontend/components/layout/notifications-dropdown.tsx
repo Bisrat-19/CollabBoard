@@ -14,7 +14,25 @@ export function NotificationsDropdown() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const fetchNotificationCount = async () => {
+    if (!user) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/notifications/count", {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadCount(data.count);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notification count:", error);
+    }
+  };
 
   const fetchNotifications = async () => {
     if (!user) return;
@@ -28,47 +46,109 @@ export function NotificationsDropdown() {
       if (res.ok) {
         const data = await res.json();
         setNotifications(data);
+        // Update count from notifications
+        setUnreadCount(data.filter((n: Notification) => !n.read).length);
       }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch notification count on mount and when user changes
   useEffect(() => {
-    if (isOpen) fetchNotifications();
-  }, [isOpen]);
+    if (user) {
+      fetchNotificationCount();
+      // Set up polling for real-time updates
+      const interval = setInterval(fetchNotificationCount, 10000); // Poll every 10 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  // Also fetch when dropdown opens
+  useEffect(() => {
+    if (isOpen && user) {
+      fetchNotifications();
+    }
+  }, [isOpen, user]);
 
   const handleAccept = async (notificationId: string) => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:5000/api/notifications/${notificationId}/accept`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      credentials: "include",
-    });
-    if (res.ok) {
-      setNotifications((prev) =>
-        prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
-      );
-      toast({ title: "Invitation accepted", description: "You have joined the project." });
+    try {
+      const res = await fetch(`http://localhost:5000/api/notifications/${notificationId}/accept`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
+        );
+        // Update count
+        setUnreadCount(prev => Math.max(0, prev - 1));
+        
+        // Show success message with project name if available
+        const projectName = result.project?.name || "the project";
+        toast({ 
+          title: "Invitation accepted!", 
+          description: `You have successfully joined ${projectName}. The page will refresh to show your new project.` 
+        });
+        
+        // Refresh the page to update project list
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        const error = await res.json();
+        toast({ 
+          title: "Error", 
+          description: error.message || "Failed to accept invitation",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Accept invitation error:", error);
+      toast({ 
+        title: "Error", 
+        description: "Failed to accept invitation. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   const handleDecline = async (notificationId: string) => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:5000/api/notifications/${notificationId}/decline`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      credentials: "include",
-    });
-    if (res.ok) {
-      setNotifications((prev) =>
-        prev.filter((n) => n._id !== notificationId)
-      );
-      toast({ title: "Invitation declined", description: "You have declined the invitation." });
+    try {
+      const res = await fetch(`http://localhost:5000/api/notifications/${notificationId}/decline`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      });
+      if (res.ok) {
+        setNotifications((prev) =>
+          prev.filter((n) => n._id !== notificationId)
+        );
+        // Update count
+        setUnreadCount(prev => Math.max(0, prev - 1));
+        toast({ title: "Invitation declined", description: "You have declined the invitation." });
+      } else {
+        const error = await res.json();
+        toast({ 
+          title: "Error", 
+          description: error.message || "Failed to decline invitation",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Failed to decline invitation",
+        variant: "destructive"
+      });
     }
   };
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>

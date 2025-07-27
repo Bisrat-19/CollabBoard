@@ -17,9 +17,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 interface ProjectBoardProps {
   project: Project
   onBack: () => void
+  onTaskUpdated?: () => void
 }
 
-export function ProjectBoard({ project, onBack }: ProjectBoardProps) {
+export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardProps) {
   const [board, setBoard] = useState<Board | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
@@ -77,10 +78,56 @@ export function ProjectBoard({ project, onBack }: ProjectBoardProps) {
       }
     })
     setShowCreateTask(false)
+    
+    // Notify parent component that a task was created
+    if (onTaskUpdated) {
+      onTaskUpdated();
+    }
   }
 
   const handleTaskUpdated = async (updatedTask: Task) => {
-    await loadBoard();
+    // Update the board with the new task data and move it to the correct column
+    setBoard((prev) => {
+      if (!prev) return prev;
+      
+      // Map the updated task status to column ID (handle both frontend and backend formats)
+      const statusToColumnMap: Record<string, string> = {
+        "todo": "todo",
+        "in-progress": "in-progress", 
+        "done": "done",
+        "To Do": "todo",
+        "In Progress": "in-progress", 
+        "Done": "done"
+      };
+      
+      const targetColumnId = statusToColumnMap[updatedTask.status] || "todo";
+      
+      return {
+        ...prev,
+        columns: prev.columns.map((col) => {
+          // Remove the task from all columns first
+          const filteredTasks = col.tasks.filter((task) => task.id !== updatedTask.id);
+          
+          // Add the task to the correct column
+          if (col.id === targetColumnId) {
+            return {
+              ...col,
+              tasks: [...filteredTasks, updatedTask]
+            };
+          }
+          
+          return {
+            ...col,
+            tasks: filteredTasks
+          };
+        }),
+      };
+    });
+    
+    // Notify parent component that a task was updated
+    if (onTaskUpdated) {
+      onTaskUpdated();
+    }
   }
 
   const handleCreateTask = (columnId: string) => {
@@ -91,6 +138,8 @@ export function ProjectBoard({ project, onBack }: ProjectBoardProps) {
   const handleMembersUpdated = (updatedProject: Project) => {
     setCurrentProject(updatedProject)
     setShowMembersDialog(false)
+    // Also reload the board to ensure all data is in sync
+    loadBoard();
   }
 
   if (isLoading) {
@@ -127,7 +176,18 @@ export function ProjectBoard({ project, onBack }: ProjectBoardProps) {
   const completedTasks = board.columns.find((col) => col.id === "done")?.tasks.length || 0
   const inProgressTasks = board.columns.find((col) => col.id === "in-progress")?.tasks.length || 0
   const todoTasks = board.columns.find((col) => col.id === "todo")?.tasks.length || 0
-  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+  
+  // Calculate completion rate using the same logic as project cards
+  let completionRate: number
+  if (totalTasks === 0) {
+    completionRate = 5 // If no tasks exist, return 5%
+  } else if (totalTasks === completedTasks) {
+    completionRate = 100 // If all tasks are completed, return 100%
+  } else if (completedTasks === 0 && inProgressTasks === 0) {
+    completionRate = 5 // If completed and in-progress are 0, return 5%
+  } else {
+    completionRate = 60 // Otherwise, return 60%
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -161,9 +221,8 @@ export function ProjectBoard({ project, onBack }: ProjectBoardProps) {
                 <div className="flex -space-x-2">
                   {currentProject.members.slice(0, 5).map((member, idx) => (
                     <Avatar key={member.id ? member.id : `member-${idx}`} className="h-8 w-8 border-2 border-white ring-1 ring-gray-200">
-                      <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
-                      <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-                        {member?.name?.charAt(0) ?? "?"}
+                      <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold">
+                        {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
                       </AvatarFallback>
                     </Avatar>
                   ))}

@@ -46,6 +46,12 @@ export interface Task {
   createdBy: User
   createdAt: string
   updatedAt: string
+  project?: {
+    id: string
+    _id?: string
+    name: string
+    description: string
+  }
 }
 
 export interface Comment {

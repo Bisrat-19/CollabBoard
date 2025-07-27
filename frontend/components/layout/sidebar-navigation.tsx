@@ -16,7 +16,6 @@ import {
   Users,
   Settings,
   LogOut,
-  Search,
   Plus,
   ChevronDown,
   Crown,
@@ -89,77 +88,23 @@ export function SidebarNavigation({
           {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </Button>
 
-        {/* User Profile - At Top */}
-        <div className="p-4 lg:p-6 border-b border-purple-500/30">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full p-3 h-auto hover:bg-white/10">
-                <div className={`flex items-center ${isCollapsed ? "justify-center" : "space-x-3"} w-full`}>
-                  <Avatar className="h-8 w-8 lg:h-10 lg:w-10 ring-2 ring-white/20">
-                    <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name} />
-                    <AvatarFallback className="bg-purple-500 text-white text-sm lg:text-base">
-                      {user?.name?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {!isCollapsed && (
-                    <>
-                      <div className="flex-1 text-left">
-                        <p className="font-medium text-white text-sm lg:text-base">{user?.name}</p>
-                        <p className="text-xs lg:text-sm text-purple-200 truncate">{user?.email}</p>
-                      </div>
-                      <ChevronDown className="h-4 w-4 text-purple-200" />
-                    </>
-                  )}
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <div className="flex items-center justify-start gap-2 p-2">
-                <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium text-sm">{user?.name}</p>
-                  <p className="w-[200px] truncate text-xs text-muted-foreground">{user?.email}</p>
-                </div>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={logout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
         {/* Header */}
-        {!isCollapsed && (
-          <div className="px-4 lg:px-6 py-4 border-b border-purple-500/30">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-xl flex items-center justify-center">
-                <FolderOpen className="h-4 w-4 lg:h-6 lg:w-6 text-purple-600" />
-              </div>
+        <div className="px-4 lg:px-6 py-4 border-b border-purple-500/30">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-xl flex items-center justify-center">
+              <FolderOpen className="h-4 w-4 lg:h-6 lg:w-6 text-purple-600" />
+            </div>
+            {!isCollapsed && (
               <div>
                 <h1 className="text-lg lg:text-xl font-bold">CollabBoard</h1>
                 <p className="text-purple-200 text-xs lg:text-sm">Project Management</p>
               </div>
-            </div>
-
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-300" />
-              <input
-                type="text"
-                placeholder="Search projects..."
-                className="w-full bg-white/10 border border-purple-400/30 rounded-xl pl-10 pr-4 py-2 text-sm lg:text-base text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/20"
-              />
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Navigation - Vertical List */}
-        <div className="flex-1 p-4 lg:p-6 overflow-y-visible">
+        <div className="flex-1 p-4 lg:p-6">
           <div className="space-y-2 mb-8">
             {navigationItems.map((item) => (
               <button
@@ -226,6 +171,49 @@ export function SidebarNavigation({
               )}
             </div>
           )}
+        </div>
+
+        {/* User Profile - At Bottom */}
+        <div className="p-4 lg:p-6 border-t border-purple-500/30">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="w-full p-3 h-auto hover:bg-white/10">
+                <div className={`flex items-center ${isCollapsed ? "justify-center" : "space-x-3"} w-full`}>
+                  <Avatar className="h-8 w-8 lg:h-10 lg:w-10 ring-2 ring-white/20">
+                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-sm lg:text-base font-semibold">
+                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  {!isCollapsed && (
+                    <>
+                      <div className="flex-1 text-left">
+                        <p className="font-medium text-white text-sm lg:text-base">{user?.name}</p>
+                        <p className="text-xs lg:text-sm text-purple-200 truncate">{user?.email}</p>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-purple-200" />
+                    </>
+                  )}
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <div className="flex items-center justify-start gap-2 p-2">
+                <div className="flex flex-col space-y-1 leading-none">
+                  <p className="font-medium text-sm">{user?.name}</p>
+                  <p className="w-[200px] truncate text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </>

@@ -119,6 +119,7 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
     setIsLoading(true)
     try {
       const token = localStorage.getItem("token");
+      const emailToInvite = inviteEmail.trim(); // Store email before clearing
       const res = await fetch("http://localhost:5000/api/users/invite", {
         method: "POST",
         headers: {
@@ -126,7 +127,7 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
           "Authorization": `Bearer ${token}`,
         },
         credentials: "include",
-        body: JSON.stringify({ email: inviteEmail, projectId: project.id }),
+        body: JSON.stringify({ email: emailToInvite, projectId: project.id }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -136,7 +137,7 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
       setInviteEmail("");
       toast({
         title: "Invitation sent!",
-        description: `Invitation has been sent to ${inviteEmail}`,
+        description: `Invitation has been sent to ${emailToInvite}`,
       });
     } catch (error: any) {
       toast({
@@ -200,10 +201,8 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
                 <div key={member.id ?? idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-                        {member?.name?.charAt(0) ?? "?"}
-
+                      <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold">
+                        {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
@@ -279,9 +278,8 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
                 <div key={user.id ?? idx} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-sm">
-                        {user.name.charAt(0)}
+                      <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
+                        {user?.name?.charAt(0)?.toUpperCase() ?? "?"}
                       </AvatarFallback>
                     </Avatar>
                     <div>

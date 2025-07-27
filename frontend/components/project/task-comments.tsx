@@ -83,8 +83,9 @@ export function TaskComments({ task, onCommentAdded }: TaskCommentsProps) {
           normalizedComments.map((comment, idx) => (
             <div key={comment.id ?? comment._id ?? idx} className="flex space-x-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={comment.author.avatar || "/placeholder.svg"} />
-                <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
+                  {comment.author?.name?.charAt(0)?.toUpperCase() ?? "?"}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-1 space-y-1">
                 <div className="flex items-center space-x-2">

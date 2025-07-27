@@ -7,8 +7,8 @@ import { authService } from "@/services/auth-service"
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<boolean>
-  register: (name: string, email: string, password: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   isLoading: boolean
 }
@@ -35,25 +35,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth()
   }, [])
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const userData = await authService.login(email, password)
       setUser(userData)
-      return true
-    } catch (error) {
+      return { success: true }
+    } catch (error: any) {
       console.error("Login failed:", error)
-      return false
+      return { success: false, error: error.message || "Invalid email or password" }
     }
   }
 
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
+  const register = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const userData = await authService.register(name, email, password)
       setUser(userData)
-      return true
-    } catch (error) {
+      return { success: true }
+    } catch (error: any) {
       console.error("Registration failed:", error)
-      return false
+      return { success: false, error: error.message || "Registration failed" }
     }
   }
 
