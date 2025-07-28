@@ -60,6 +60,12 @@ export function EnhancedDashboard() {
     loadData()
   }, [])
 
+  useEffect(() => {
+    const handler = () => loadData();
+    window.addEventListener("projectListShouldRefresh", handler);
+    return () => window.removeEventListener("projectListShouldRefresh", handler);
+  }, [])
+
   const loadData = async () => {
     try {
       setIsLoading(true)
@@ -350,7 +356,7 @@ export function EnhancedDashboard() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-                    <p className="text-gray-600 text-sm lg:text-base">Welcome back! Here's what's happening with your projects.</p>
+                    <p className="text-gray-600 text-sm lg:text-base">Welcome! Here's what's happening with your projects.</p>
                   </div>
                   <div className="flex items-center space-x-3">
                     <NotificationsDropdown />

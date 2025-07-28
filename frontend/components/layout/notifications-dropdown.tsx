@@ -93,13 +93,11 @@ export function NotificationsDropdown() {
         const projectName = result.project?.name || "the project";
         toast({ 
           title: "Invitation accepted!", 
-          description: `You have successfully joined ${projectName}. The page will refresh to show your new project.` 
+          description: `You have successfully joined ${projectName}. The page will update to show your new project.` 
         });
-        
-        // Refresh the page to update project list
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+        // Trigger dashboard/project list refresh invisibly
+        window.dispatchEvent(new Event("projectListShouldRefresh"));
+        setIsOpen(false);
       } else {
         const error = await res.json();
         toast({ 
