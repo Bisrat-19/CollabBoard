@@ -2,6 +2,7 @@ import { Key } from "react"
 
 export interface User {
   id: string
+  _id?: string // Add _id field for backend compatibility
   name: string
   email: string
   role: "admin" | "user"
