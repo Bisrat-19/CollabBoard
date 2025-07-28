@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import type { Project, Board, Task } from "@/types"
 import { taskService } from "@/services/task-service"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +22,7 @@ interface ProjectBoardProps {
 }
 
 export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardProps) {
+  const { user } = useAuth()
   const [board, setBoard] = useState<Board | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
@@ -88,45 +90,38 @@ export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardPro
   }
 
   const handleTaskUpdated = async (updatedTask: Task) => {
-    // Update the board with the new task data and move it to the correct column
+    // Always normalize status and id
+    const normalizedStatusMap: Record<string, 'todo' | 'in-progress' | 'done'> = {
+      "To Do": "todo",
+      "In Progress": "in-progress",
+      "Done": "done",
+      "todo": "todo",
+      "in-progress": "in-progress",
+      "done": "done"
+    };
+    const normalizedId = updatedTask.id;
+    const normalizedStatus = normalizedStatusMap[updatedTask.status] || "todo";
+    const safeTask: Task = { ...updatedTask, id: normalizedId, status: normalizedStatus };
     setBoard((prev) => {
       if (!prev) return prev;
-      
-      // Map the updated task status to column ID (handle both frontend and backend formats)
-      const statusToColumnMap: Record<string, string> = {
-        "todo": "todo",
-        "in-progress": "in-progress", 
-        "done": "done",
-        "To Do": "todo",
-        "In Progress": "in-progress", 
-        "Done": "done"
-      };
-      
-      const targetColumnId = statusToColumnMap[updatedTask.status] || "todo";
-      
-      return {
-        ...prev,
-        columns: prev.columns.map((col) => {
-          // Remove the task from all columns first
-          const filteredTasks = col.tasks.filter((task) => task.id !== updatedTask.id);
-          
-          // Add the task to the correct column
-          if (col.id === targetColumnId) {
-            return {
-              ...col,
-              tasks: [...filteredTasks, updatedTask]
-            };
-          }
-          
+      const newColumns = prev.columns.map((col) => {
+        const filteredTasks = col.tasks.filter((task) => task.id !== normalizedId);
+        if (col.id === normalizedStatus) {
           return {
             ...col,
-            tasks: filteredTasks
+            tasks: [...filteredTasks, safeTask]
           };
-        }),
+        }
+        return {
+          ...col,
+          tasks: filteredTasks
+        };
+      });
+      return {
+        ...prev,
+        columns: [...newColumns],
       };
     });
-    
-    // Notify parent component that a task was updated
     if (onTaskUpdated) {
       onTaskUpdated();
     }
@@ -412,6 +407,7 @@ export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardPro
         onOpenChange={setShowMembersDialog}
         project={currentProject}
         onMembersUpdated={handleMembersUpdated}
+        currentUser={user || undefined}
       />
     </div>
   )

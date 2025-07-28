@@ -63,10 +63,13 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
         "In Progress": "in-progress",
         "Done": "done"
       };
-      
+      let normalizedStatus = updatedTask.status as "todo" | "in-progress" | "done";
+      if (reverseStatusMap[updatedTask.status]) {
+        normalizedStatus = reverseStatusMap[updatedTask.status];
+      }
       const taskWithFrontendStatus: Task = {
         ...updatedTask,
-        status: reverseStatusMap[updatedTask.status] || "todo"
+        status: normalizedStatus
       };
       
       onTaskUpdated(taskWithFrontendStatus)

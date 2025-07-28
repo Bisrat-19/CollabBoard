@@ -16,6 +16,7 @@ export interface Project {
   name: string
   description: string
   ownerId: string
+  createdBy?: string // Add createdBy field for backend compatibility
   members: User[]
   createdAt: string
   updatedAt: string

@@ -42,6 +42,7 @@ export function Dashboard() {
         description: p.description,
         members: p.members,
         ownerId: p.ownerId,
+        createdBy: p.createdBy, // Add createdBy field from backend
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
       }));

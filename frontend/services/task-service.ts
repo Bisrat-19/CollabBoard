@@ -190,7 +190,22 @@ export const taskService = {
     }
     
     const rawTask = await res.json();
-    const task = { ...rawTask, id: rawTask.id || rawTask._id };
+    // Normalize status and assignedTo
+    const reverseStatusMap = {
+      "To Do": "todo",
+      "In Progress": "in-progress",
+      "Done": "done"
+    };
+    const task = {
+      ...rawTask,
+      id: rawTask.id || rawTask._id,
+      status: reverseStatusMap[String(rawTask.status) as keyof typeof reverseStatusMap] || rawTask.status,
+      assignedTo: rawTask.assignedTo && typeof rawTask.assignedTo === 'object' ? {
+        ...rawTask.assignedTo,
+        id: rawTask.assignedTo.id || rawTask.assignedTo._id,
+        _id: rawTask.assignedTo._id || rawTask.assignedTo.id,
+      } : undefined
+    };
     console.log("Task updated successfully:", task);
     return task;
   },

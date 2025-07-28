@@ -90,14 +90,19 @@ export function EnhancedDashboard() {
       console.log("Tasks data:", tasksData)
       console.log("Collaborating users data:", collaboratingUsersData)
       
-      // Map _id to id for all projects
+      // Map _id to id for all projects and normalize members
       const mappedProjects = (projectsData || []).map((p: any) => ({
         _id: p._id,
         id: p.id || p._id,
         name: p.name,
         description: p.description,
-        members: p.members,
+        members: (p.members || []).map((m: any) => ({
+          ...m,
+          id: m.id || m._id,
+          _id: m._id || m.id,
+        })),
         ownerId: p.ownerId,
+        createdBy: p.createdBy, // Add createdBy field from backend
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
       }))
@@ -628,6 +633,7 @@ export function EnhancedDashboard() {
           onOpenChange={setShowMembersDialog}
           project={selectedProjectForMembers!}
           onMembersUpdated={handleMembersUpdated}
+          currentUser={user || undefined}
         />
       )}
     </>
