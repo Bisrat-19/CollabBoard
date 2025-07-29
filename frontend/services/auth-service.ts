@@ -1,9 +1,10 @@
 import type { User } from "@/types"
+import { getApiUrl } from "@/lib/config"
 
 class AuthService {
   private currentUser: User | null = null
 
-  private API_BASE = "http://localhost:5000/api/auth"
+  private API_BASE = getApiUrl("/auth")
 
   async login(email: string, password: string): Promise<User> {
     const response = await fetch(`${this.API_BASE}/login`, {

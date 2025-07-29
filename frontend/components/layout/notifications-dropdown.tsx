@@ -8,6 +8,7 @@ import { Bell, Clock, Users, MessageCircle, Calendar, CheckCircle } from "lucide
 import { useAuth } from "@/contexts/auth-context"
 import type { Notification } from "@/types"
 import { useToast } from "@/hooks/use-toast"
+import { getApiUrl } from "@/lib/config"
 
 export function NotificationsDropdown() {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export function NotificationsDropdown() {
     if (!user) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/notifications/count", {
+      const res = await fetch(getApiUrl("/notifications/count"), {
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include",
       });
@@ -39,7 +40,7 @@ export function NotificationsDropdown() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/notifications", {
+      const res = await fetch(getApiUrl("/notifications"), {
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include",
       });
@@ -76,7 +77,7 @@ export function NotificationsDropdown() {
   const handleAccept = async (notificationId: string) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:5000/api/notifications/${notificationId}/accept`, {
+      const res = await fetch(getApiUrl(`/notifications/${notificationId}/accept`), {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include",
@@ -119,7 +120,7 @@ export function NotificationsDropdown() {
   const handleDecline = async (notificationId: string) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:5000/api/notifications/${notificationId}/decline`, {
+      const res = await fetch(getApiUrl(`/notifications/${notificationId}/decline`), {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include",

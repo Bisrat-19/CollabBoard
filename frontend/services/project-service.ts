@@ -1,8 +1,9 @@
 import type { Project } from "@/types"
 import { authService } from "./auth-service"
+import { getApiUrl } from "@/lib/config"
 
 class ProjectService {
-  private API_BASE = "http://localhost:5000/api/projects"
+  private API_BASE = getApiUrl("/projects")
 
   private async getAuthHeaders() {
     const token = authService.getToken()

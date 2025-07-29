@@ -1,7 +1,8 @@
 import type { Task, CreateTaskData, UpdateTaskData, Comment, Board, Column, User } from "@/types"
 import { authService } from "./auth-service";
+import { getApiUrl } from "@/lib/config";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = getApiUrl("");
 
 // Helper function to normalize user data
 const normalizeUser = (user: any): User => ({

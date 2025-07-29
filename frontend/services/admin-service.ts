@@ -1,4 +1,5 @@
 import type { User } from "@/types"
+import { getApiUrl } from "@/lib/config"
 
 interface CreateUserData {
   name: string
@@ -15,7 +16,7 @@ interface UpdateUserData {
 }
 
 class AdminService {
-  private API_BASE = "http://localhost:5000/api/admin"
+  private API_BASE = getApiUrl("/admin")
 
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem("token")

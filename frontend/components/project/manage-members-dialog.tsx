@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { Search, UserPlus, X, Mail, Crown, UserIcon, Eye } from "lucide-react"
+import { getApiUrl } from "@/lib/config"
 
 interface ManageMembersDialogProps {
   open: boolean
@@ -38,7 +39,7 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
     if (open) {
       // Only fetch users if user is owner
       if (isOwner) {
-        fetch("http://localhost:5000/api/users", { credentials: "include" })
+        fetch(getApiUrl("/users"), { credentials: "include" })
           .then((res) => res.json())
           .then((data) => {
             // Ensure data is an array
@@ -95,7 +96,7 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
     try {
       const token = localStorage.getItem("token");
       const emailToInvite = inviteEmail.trim(); // Store email before clearing
-      const res = await fetch("http://localhost:5000/api/users/invite", {
+      const res = await fetch(getApiUrl("/users/invite"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -131,7 +132,7 @@ export function ManageMembersDialog({ open, onOpenChange, project, onMembersUpda
     setIsLoading(true)
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/users/invite", {
+      const res = await fetch(getApiUrl("/users/invite"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
