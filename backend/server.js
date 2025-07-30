@@ -15,7 +15,7 @@ const notificationRoutes = require('./routes/notification');
 
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:3000', 
+    origin: 'https://collabboard-frontend-pcyv.onrender.com', 
     credentials: true
 }));
 app.use(express.json());
