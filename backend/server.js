@@ -15,7 +15,7 @@ const notificationRoutes = require('./routes/notification');
 
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:3000', 
+    origin: 'https://collab-board-steel.vercel.app/', 
     credentials: true
 }));
 app.use(express.json());
