@@ -226,7 +226,9 @@ export function ProjectManagement({ projects, onProjectsChange, onRefresh }: Pro
                     </TableCell>
                   </TableRow>
                 ) : (
-                  projects.map((project, index) => (
+                  projects
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .map((project, index) => (
                     <TableRow key={project.id || `project-${index}`}>
                       <TableCell>
                         <div className="flex items-center space-x-3">
@@ -235,12 +237,12 @@ export function ProjectManagement({ projects, onProjectsChange, onRefresh }: Pro
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">{project.name}</p>
-                            <p className="text-xs text-gray-500 sm:hidden line-clamp-1">{project.description}</p>
+                            <p className="text-xs text-gray-500 sm:hidden truncate">{project.description?.length > 30 ? `${project.description.substring(0, 30)}...` : project.description}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-xs sm:text-sm">
-                        <p className="line-clamp-2">{project.description}</p>
+                        <p className="truncate">{project.description?.length > 60 ? `${project.description.substring(0, 60)}...` : project.description}</p>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="flex -space-x-1 sm:-space-x-2">

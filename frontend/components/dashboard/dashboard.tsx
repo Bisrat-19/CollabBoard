@@ -46,7 +46,11 @@ export function Dashboard() {
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
       }));
-      setProjects(mapped as Project[]);
+             // Sort projects by createdAt in descending order (newest first)
+       const sortedProjects = mapped.sort((a: any, b: any) => 
+         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+       );
+       setProjects(sortedProjects as Project[]);
     } catch (error) {
       console.error("Failed to load projects:", error);
     } finally {
@@ -54,10 +58,11 @@ export function Dashboard() {
     }
   }
 
-  const handleProjectCreated = (project: Project) => {
-    setProjects((prev) => [...prev, project])
-    setShowCreateDialog(false)
-  }
+     const handleProjectCreated = (project: Project) => {
+     // Add new project to the beginning of the list (newest first)
+     setProjects((prev) => [project, ...prev])
+     setShowCreateDialog(false)
+   }
 
   if (selectedProject) {
     return <ProjectBoard project={selectedProject} onBack={() => setSelectedProject(null)} />
@@ -144,41 +149,96 @@ export function Dashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
-              <Card
-                key={project.id}
-                className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => setSelectedProject(project)}
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="truncate">{project.name}</span>
-                    <Badge variant="secondary">
-                      {project.members.length} member{project.members.length !== 1 ? "s" : ""}
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="line-clamp-2">{project.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex -space-x-2">
-                      {project.members.slice(0, 3).map((member) => (
-                        <Avatar key={member.id} className="h-8 w-8 border-2 border-white">
-                          <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
-                          <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                      ))}
-                      {project.members.length > 3 && (
-                        <div className="h-8 w-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
-                          <span className="text-xs text-gray-600">+{project.members.length - 3}</span>
+                             <Card
+                 key={project.id}
+                                   className="group hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white to-gray-50 shadow-md hover:shadow-blue-100/50"
+                 role="button"
+                 tabIndex={0}
+                 aria-label={`View ${project.name} project board`}
+                 onClick={() => setSelectedProject(project)}
+                 onKeyDown={(e) => {
+                   if (e.key === 'Enter' || e.key === ' ') {
+                     e.preventDefault()
+                     setSelectedProject(project)
+                   }
+                 }}
+               >
+                                 <CardHeader className="pb-3">
+                   <div className="flex items-start justify-between">
+                     <div className="flex-1 min-w-0">
+                                               <CardTitle className="text-base lg:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                          {project.name}
+                        </CardTitle>
+                       <CardDescription className="mt-1 text-sm truncate">
+                         {project.description && project.description.length > 50
+                           ? `${project.description.substring(0, 50)}...`
+                           : project.description}
+                       </CardDescription>
+                     </div>
+                                           <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 border-orange-200 flex-shrink-0">
+                        {project.members.length} member{project.members.length !== 1 ? "s" : ""}
+                      </Badge>
+                   </div>
+                 </CardHeader>
+                 <CardContent className="pt-0">
+                   <div className="space-y-4">
+                     {/* Project Stats Row */}
+                     <div className="flex items-center justify-between">
+                       <div className="flex items-center space-x-3">
+                         {/* Progress Indicator */}
+                                                   <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="text-xs font-medium text-gray-600">Progress</span>
+                            <span className="text-sm font-bold text-blue-600">60%</span>
+                           </div>
+                       </div>
+                       
+                       {/* Last Updated */}
+                       <div className="flex items-center text-xs text-gray-500">
+                         <Calendar className="h-3 w-3 mr-1" />
+                         {new Date(project.updatedAt).toLocaleDateString()}
+                       </div>
+                     </div>
+
+                     {/* Progress Bar */}
+                     <div className="relative">
+                                               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500 ease-out"
+                            style={{ width: "60%" }}
+                          ></div>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {new Date(project.updatedAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                </CardContent>
+                     </div>
+
+                     {/* Team Members Section */}
+                     <div className="border-t border-gray-100 pt-3">
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center space-x-2">
+                           <Users className="h-4 w-4 text-gray-400" />
+                           <span className="text-xs font-medium text-gray-600">Team</span>
+                         </div>
+                       </div>
+                       
+                       {/* Member Avatars */}
+                       <div className="flex -space-x-2 mt-2">
+                         {project.members.slice(0, 4).map((member) => (
+                           <Avatar key={member.id} className="h-6 w-6 border-2 border-white ring-1 ring-gray-200 hover:scale-110 transition-transform">
+                             <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
+                                                         <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-semibold">
+                              {member.name.charAt(0)}
+                            </AvatarFallback>
+                           </Avatar>
+                         ))}
+                         {project.members.length > 4 && (
+                           <div className="h-6 w-6 rounded-full bg-gray-100 border-2 border-white ring-1 ring-gray-200 flex items-center justify-center hover:scale-110 transition-transform">
+                             <span className="text-xs text-gray-600 font-medium">+{project.members.length - 4}</span>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   </div>
+                 </CardContent>
               </Card>
             ))}
           </div>

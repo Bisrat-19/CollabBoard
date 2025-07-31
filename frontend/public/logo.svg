@@ -1,0 +1,37 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shadow -->
+  <rect x="4" y="4" width="112" height="112" rx="16" fill="rgba(0,0,0,0.1)" filter="blur(4px)"/>
+  
+  <!-- Background with gradient -->
+  <defs>
+    <linearGradient id="gradient6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded square background -->
+  <rect x="8" y="8" width="104" height="104" rx="12" fill="url(#gradient6)"/>
+  
+  <!-- Team members -->
+  <!-- Center person -->
+  <circle cx="60" cy="45" r="12" fill="white" opacity="0.9"/>
+  <path d="M48 57 Q60 75 72 57" stroke="white" stroke-width="8" fill="none" stroke-linecap="round"/>
+  
+  <!-- Left person -->
+  <circle cx="35" cy="50" r="8" fill="white" opacity="0.8"/>
+  <path d="M27 58 Q35 70 43 58" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/>
+  
+  <!-- Right person -->
+  <circle cx="85" cy="50" r="8" fill="white" opacity="0.8"/>
+  <path d="M77 58 Q85 70 93 58" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/>
+  
+  <!-- Bottom person -->
+  <circle cx="60" cy="75" r="8" fill="white" opacity="0.8"/>
+  <path d="M52 83 Q60 95 68 83" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/>
+  
+  <!-- Connection lines -->
+  <path d="M35 50 L60 45" stroke="white" stroke-width="2" opacity="0.6"/>
+  <path d="M85 50 L60 45" stroke="white" stroke-width="2" opacity="0.6"/>
+  <path d="M60 75 L60 57" stroke="white" stroke-width="2" opacity="0.6"/>
+</svg> 

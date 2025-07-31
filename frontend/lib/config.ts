@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-  // Change this to your deployed backend URL
-  BASE_URL: "https://collabboard-backend-bli2.onrender.com", //BASE_URL:"http://localhost:5000",
+  //BASE_URL:"http://localhost:5000",
+  BASE_URL: "https://collabboard-backend-bli2.onrender.com", 
   API_PREFIX: "/api",
 }
 

@@ -32,6 +32,7 @@ interface AdminPanelProps {
 
 export function AdminPanel({ onBack, onRefresh }: AdminPanelProps) {
   const [projects, setProjects] = useState<Project[]>([])
+  const [users, setUsers] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [systemSettings, setSystemSettings] = useState({
     maintenanceMode: false,
@@ -50,11 +51,13 @@ export function AdminPanel({ onBack, onRefresh }: AdminPanelProps) {
   const loadData = async () => {
     try {
       setIsLoading(true)
-      const [projectsData, settingsData] = await Promise.all([
+      const [projectsData, usersData, settingsData] = await Promise.all([
         adminService.getAllProjects(),
+        adminService.getAllUsers(),
         adminService.getSystemSettings(),
       ])
       setProjects(projectsData)
+      setUsers(usersData)
       setSystemSettings(settingsData)
     } catch (error) {
       console.error("Failed to load admin data:", error)
@@ -128,11 +131,7 @@ export function AdminPanel({ onBack, onRefresh }: AdminPanelProps) {
     }, 2000)
   }
 
-  const totalUsers = projects.reduce((acc, project) => {
-    const uniqueUsers = new Set()
-    project.members.forEach((member) => uniqueUsers.add(member.id))
-    return acc + uniqueUsers.size
-  }, 0)
+  const totalUsers = users.length
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -281,7 +280,10 @@ export function AdminPanel({ onBack, onRefresh }: AdminPanelProps) {
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6">
                     <div className="space-y-3 sm:space-y-4">
-                      {projects.slice(0, 5).map((project, index) => (
+                                             {projects
+                         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                         .slice(0, 5)
+                         .map((project, index) => (
                         <div
                           key={project.id || `project-${index}`}
                           className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl hover:from-purple-50 hover:to-indigo-50 transition-all duration-200"
@@ -292,7 +294,7 @@ export function AdminPanel({ onBack, onRefresh }: AdminPanelProps) {
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{project.name}</p>
-                              <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">{project.description}</p>
+                                                             <p className="text-xs sm:text-sm text-gray-600 truncate">{project.description?.length > 50 ? `${project.description.substring(0, 50)}...` : project.description}</p>
                               <p className="text-xs text-gray-500 mt-1">
                                 Updated {new Date(project.updatedAt).toLocaleDateString()}
                               </p>

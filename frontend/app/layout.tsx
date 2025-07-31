@@ -12,6 +12,19 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "CollabBoard",
   description: "Manage projects, assign tasks, and collaborate efficiently with your team",
+  icons: {
+    icon: [
+      {
+        url: '/icon.svg',
+        type: 'image/svg+xml',
+      },
+      {
+        url: '/favicon.ico',
+        type: 'image/x-icon',
+      }
+    ],
+    apple: '/icon.svg',
+  },
 }
 
 export default function RootLayout({

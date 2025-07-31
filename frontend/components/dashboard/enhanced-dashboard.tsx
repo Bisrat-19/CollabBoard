@@ -113,9 +113,14 @@ export function EnhancedDashboard() {
         id: t.id || t._id,
       }))
       
-      setProjects(mappedProjects)
-      setTasks(mappedTasks)
-      setCollaboratingUsers(collaboratingUsersData || [])
+             // Sort projects by createdAt in descending order (newest first)
+       const sortedProjects = mappedProjects.sort((a, b) => 
+         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+       )
+       
+       setProjects(sortedProjects)
+       setTasks(mappedTasks)
+       setCollaboratingUsers(collaboratingUsersData || [])
     } catch (error) {
       console.error("Error loading data:", error)
     } finally {
@@ -128,17 +133,18 @@ export function EnhancedDashboard() {
     loadData()
   }
 
-  const handleProjectCreated = (project: any) => {
-    // Ensure the new project has an 'id' property
-    const mappedProject = {
-      ...project,
-      id: project.id || project._id,
-    };
-    setProjects((prev) => [...prev, mappedProject]);
-    setShowCreateDialog(false);
-    // Reload data to get updated statistics
-    loadData();
-  }
+     const handleProjectCreated = (project: any) => {
+     // Ensure the new project has an 'id' property
+     const mappedProject = {
+       ...project,
+       id: project.id || project._id,
+     };
+     // Add new project to the beginning of the list (newest first)
+     setProjects((prev) => [mappedProject, ...prev]);
+     setShowCreateDialog(false);
+     // Reload data to get updated statistics
+     loadData();
+   }
 
   const handleManageMembers = (project: Project) => {
     setSelectedProjectForMembers(project)
@@ -205,15 +211,31 @@ export function EnhancedDashboard() {
   }
 
   const ProjectCard = ({ project }: { project: Project }) => (
-    <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 bg-white overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-indigo-500"></div>
+    <Card 
+      className="group hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-white to-gray-50 overflow-hidden shadow-md hover:shadow-blue-100/50"
+      role="button"
+      tabIndex={0}
+      aria-label={`View ${project.name} project board`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          setSelectedProject(project)
+        }
+      }}
+    >
+       
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0" onClick={() => setSelectedProject(project)}>
-            <CardTitle className="text-base lg:text-lg font-semibold text-gray-900 group-hover:text-purple-600 transition-colors truncate">
-              {project.name}
-            </CardTitle>
-            <CardDescription className="mt-1 line-clamp-2 text-sm">{project.description}</CardDescription>
+                     <div className="flex-1 min-w-0" onClick={() => setSelectedProject(project)}>
+                           <CardTitle className="text-base lg:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                {project.name}
+              </CardTitle>
+            <CardDescription className="mt-1 text-sm truncate">
+              {project.description && project.description.length > 50
+                ? `${project.description.substring(0, 50)}...`
+                : project.description}
+            </CardDescription>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -238,108 +260,160 @@ export function EnhancedDashboard() {
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="pt-0" onClick={() => setSelectedProject(project)}>
-        <div className="space-y-4">
-          {/* Date - Moved to top */}
-          <div className="flex items-center text-sm text-gray-500">
-            <Calendar className="h-4 w-4 mr-1" />
-            {new Date(project.updatedAt).toLocaleDateString()}
-          </div>
-
-          {/* Progress Bar */}
-          <div>
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-gray-600">Progress</span>
-              <span className="font-medium text-gray-900">{calculateProjectProgress(project.id)}%</span>
-            </div>
-            <Progress value={calculateProjectProgress(project.id)} className="h-2" />
-          </div>
-
-          {/* Members */}
-          <div className="flex items-center space-x-2">
-            <div className="flex -space-x-2">
-              {project.members.slice(0, 3).map((member, index) => (
-                <Avatar
-                  key={member.id ?? `${member.name}-${index}`}
-                  className="h-6 w-6 lg:h-8 lg:w-8 border-2 border-white ring-1 ring-gray-200"
-                >
-                  <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold">
-                    {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
-                  </AvatarFallback>
-                </Avatar>
-              ))}
-
-              {project.members.length > 3 && (
-                <div className="h-6 w-6 lg:h-8 lg:w-8 rounded-full bg-gray-100 border-2 border-white ring-1 ring-gray-200 flex items-center justify-center">
-                  <span className="text-xs text-gray-600 font-medium">+{project.members.length - 3}</span>
+             <CardContent className="pt-0" onClick={() => setSelectedProject(project)}>
+         <div className="space-y-4">
+           {/* Project Stats Row */}
+           <div className="flex items-center justify-between">
+             <div className="flex items-center space-x-3">
+               {/* Progress Indicator */}
+                               <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-gray-600">Progress</span>
+                  <span className="text-sm font-bold text-blue-600">{calculateProjectProgress(project.id)}%</span>
                 </div>
-              )}
-            </div>
-            <Badge variant="secondary" className="text-xs">
-              {project.members.length} member{project.members.length !== 1 ? "s" : ""}
-            </Badge>
-          </div>
-        </div>
-      </CardContent>
+             </div>
+             
+             {/* Last Updated */}
+             <div className="flex items-center text-xs text-gray-500">
+               <Calendar className="h-3 w-3 mr-1" />
+               {new Date(project.updatedAt).toLocaleDateString()}
+             </div>
+           </div>
+
+           {/* Progress Bar */}
+           <div className="relative">
+                           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                 <div 
+                   className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500 ease-out"
+                   style={{ width: `${calculateProjectProgress(project.id)}%` }}
+                 ></div>
+              </div>
+           </div>
+
+           {/* Team Members Section */}
+           <div className="border-t border-gray-100 pt-3">
+             <div className="flex items-center justify-between">
+               <div className="flex items-center space-x-2">
+                 <Users className="h-4 w-4 text-gray-400" />
+                 <span className="text-xs font-medium text-gray-600">Team</span>
+               </div>
+                               <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 border-orange-200">
+                  {project.members.length} member{project.members.length !== 1 ? "s" : ""}
+                </Badge>
+             </div>
+             
+             {/* Member Avatars */}
+             <div className="flex -space-x-2 mt-2">
+               {project.members.slice(0, 4).map((member, index) => (
+                 <Avatar
+                   key={member.id ?? `${member.name}-${index}`}
+                   className="h-6 w-6 border-2 border-white ring-1 ring-gray-200 hover:scale-110 transition-transform"
+                 >
+                   <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-semibold">
+                     {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
+                   </AvatarFallback>
+                 </Avatar>
+               ))}
+
+               {project.members.length > 4 && (
+                 <div className="h-6 w-6 rounded-full bg-gray-100 border-2 border-white ring-1 ring-gray-200 flex items-center justify-center hover:scale-110 transition-transform">
+                   <span className="text-xs text-gray-600 font-medium">+{project.members.length - 4}</span>
+                 </div>
+               )}
+             </div>
+           </div>
+         </div>
+       </CardContent>
     </Card>
   )
 
   const ProjectListItem = ({ project }: { project: Project }) => (
-    <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 bg-white">
-      <CardContent className="p-4 lg:p-6">
-          <div className="flex items-center space-x-4 flex-1 min-w-0" onClick={() => setSelectedProject(project)}>
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center flex-shrink-0">
-              <TrendingUp className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors truncate">
-                {project.name}
-              </h3>
-              <p className="text-sm text-gray-600 line-clamp-1">{project.description}</p>
-              <div className="flex items-center space-x-4 mt-2">
-                <div className="flex items-center space-x-1">
-                  <div className="flex -space-x-1">
-                    {project.members.slice(0, 3).map((member, idx) => (
-                      <Avatar key={member.id || `member-${idx}`} className="h-6 w-6 border-2 border-white">
-                        <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold">
-                          {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                  </div>
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    {project.members.length}
-                  </Badge>
-                </div>
-                <div className="text-xs text-gray-500">Updated {new Date(project.updatedAt).toLocaleDateString()}</div>
+    <Card 
+      className="group hover:shadow-lg hover:scale-[1.01] transition-all duration-300 cursor-pointer border-0 bg-gradient-to-r from-white to-gray-50 shadow-md hover:shadow-blue-100/50"
+      role="button"
+      tabIndex={0}
+      aria-label={`View ${project.name} project board`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          setSelectedProject(project)
+        }
+      }}
+    >
+             <CardContent className="p-4 lg:p-6">
+         <div className="flex items-center space-x-4" onClick={() => setSelectedProject(project)}>
+           {/* Project Icon */}
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0">
+               <TrendingUp className="h-6 w-6 text-white" />
+             </div>
+           
+           {/* Project Info */}
+           <div className="flex-1 min-w-0">
+                           <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                  {project.name}
+                </h3>
               </div>
-            </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleManageMembers(project)
-              }}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Users className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                setSelectedProject(project)
-              }}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <TrendingUp className="h-4 w-4" />
-                </Button>
-          </div>
-        </div>
-      </CardContent>
+             
+             <p className="text-sm text-gray-600 truncate mb-2">
+               {project.description && project.description.length > 40
+                 ? `${project.description.substring(0, 40)}...`
+                 : project.description}
+             </p>
+             
+             {/* Project Stats */}
+             <div className="flex items-center justify-between">
+               <div className="flex items-center space-x-4">
+                 {/* Progress */}
+                                   <div className="flex items-center space-x-1">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs text-gray-600">Progress</span>
+                    <span className="text-xs font-bold text-blue-600">{calculateProjectProgress(project.id)}%</span>
+                  </div>
+                 
+                 {/* Team Members */}
+                 <div className="flex items-center space-x-1">
+                   <Users className="h-3 w-3 text-gray-400" />
+                   <span className="text-xs text-gray-600">{project.members.length}</span>
+                 </div>
+                 
+                 {/* Last Updated */}
+                 <div className="flex items-center space-x-1">
+                   <Calendar className="h-3 w-3 text-gray-400" />
+                   <span className="text-xs text-gray-500">{new Date(project.updatedAt).toLocaleDateString()}</span>
+                 </div>
+               </div>
+               
+               {/* Action Buttons */}
+               <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   onClick={(e) => {
+                     e.stopPropagation()
+                     handleManageMembers(project)
+                   }}
+                   className="h-6 w-6 p-0"
+                 >
+                   <Users className="h-3 w-3" />
+                 </Button>
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   onClick={(e) => {
+                     e.stopPropagation()
+                     setSelectedProject(project)
+                   }}
+                   className="h-6 w-6 p-0"
+                 >
+                   <TrendingUp className="h-3 w-3" />
+                 </Button>
+               </div>
+             </div>
+           </div>
+         </div>
+       </CardContent>
     </Card>
   )
 

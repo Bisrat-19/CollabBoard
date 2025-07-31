@@ -235,10 +235,10 @@ export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardPro
                 <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center">
                   <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
                 </div>
-                <div className="min-w-0">
-                  <h1 className="text-xl lg:text-2xl font-bold text-gray-900 truncate">{currentProject.name}</h1>
-                  <p className="text-sm text-gray-600 truncate">{currentProject.description}</p>
-                </div>
+                                 <div className="min-w-0">
+                   <h1 className="text-xl lg:text-2xl font-bold text-gray-900 truncate">{currentProject.name}</h1>
+                   <p className="text-sm text-gray-600 mt-1 hidden lg:block">Manage tasks and track progress across different stages</p>
+                 </div>
               </div>
             </div>
 
@@ -361,11 +361,15 @@ export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardPro
           </Card>
         </div>
 
-        {/* Board Title */}
-        <div className="mb-4 sm:mb-6">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">Project Board</h2>
-          <p className="text-sm sm:text-base text-gray-600">Manage tasks and track progress across different stages</p>
-        </div>
+                 
+
+         {/* Project Description */}
+         {currentProject.description && (
+           <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+             <h3 className="text-sm font-semibold text-gray-700 mb-2">Project Description</h3>
+             <p className="text-sm text-gray-600 leading-relaxed">{currentProject.description}</p>
+           </div>
+         )}
 
         {/* Board - Enhanced Responsive Scrollable */}
         <div className="flex space-x-3 sm:space-x-4 lg:space-x-6 overflow-x-auto pb-4 board-scroll smooth-scroll">
