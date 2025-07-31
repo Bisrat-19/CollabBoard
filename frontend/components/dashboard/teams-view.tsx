@@ -58,7 +58,7 @@ export function TeamsView({ projects, collaboratingUsers }: TeamsViewProps) {
           <CardContent className="p-4 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-emerald-100 text-xs lg:text-sm font-medium">Active Projects</p>
+                <p className="text-emerald-100 text-xs lg:text-sm font-medium">Total Projects</p>
                 <p className="text-2xl lg:text-3xl font-bold">{projects.length}</p>
               </div>
               <div className="bg-white/20 p-2 lg:p-3 rounded-xl">

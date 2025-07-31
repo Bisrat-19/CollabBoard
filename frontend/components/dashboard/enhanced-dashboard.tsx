@@ -16,13 +16,13 @@ import {
   Users,
   Calendar,
   TrendingUp,
-  Clock,
   Star,
   MoreHorizontal,
   Loader2,
   Filter,
   Grid,
   List,
+  Clock,
 } from "lucide-react"
 import { CreateProjectDialog } from "./create-project-dialog"
 import { ProjectBoard } from "../project/project-board"
@@ -162,11 +162,6 @@ export function EnhancedDashboard() {
     setActiveView(view)
   }
 
-  // Calculate dashboard statistics
-  const activeTasks = tasks.filter(task => task.status === "todo" || task.status === "in-progress").length
-  const completedTasks = tasks.filter(task => task.status === "done").length
-  const totalTasks = tasks.length
-
   // Function to calculate project progress
   const calculateProjectProgress = (projectId: string) => {
     const projectTasks = tasks.filter(task => {
@@ -196,6 +191,17 @@ export function EnhancedDashboard() {
     // Otherwise, return 60%
     return 60
   }
+
+  // Calculate dashboard statistics
+  const activeProjects = projects.filter(project => {
+    const projectProgress = calculateProjectProgress(project.id)
+    return projectProgress < 100
+  }).length
+  
+  const completedProjects = projects.filter(project => {
+    const projectProgress = calculateProjectProgress(project.id)
+    return projectProgress === 100
+  }).length
 
   // Handle different views
   if (selectedProject) {
@@ -472,8 +478,8 @@ export function EnhancedDashboard() {
                   <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-blue-100 text-xs lg:text-sm font-medium">Active Tasks</p>
-                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{activeTasks}</p>
+                        <p className="text-blue-100 text-xs lg:text-sm font-medium">Active</p>
+                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{activeProjects}</p>
                       </div>
                       <div className="bg-white/20 p-1.5 sm:p-2 lg:p-3 rounded-xl">
                         <Clock className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6" />
@@ -487,7 +493,7 @@ export function EnhancedDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-emerald-100 text-xs lg:text-sm font-medium">Completed</p>
-                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{completedTasks}</p>
+                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{completedProjects}</p>
                       </div>
                       <div className="bg-white/20 p-1.5 sm:p-2 lg:p-3 rounded-xl">
                         <Star className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6" />

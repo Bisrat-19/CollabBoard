@@ -58,7 +58,6 @@ exports.updateProject = async (req, res) => {
 
     project.name = req.body.name || project.name;
     project.description = req.body.description || project.description;
-    project.status = req.body.status || project.status;
     if (req.body.members) project.members = req.body.members;
 
     await project.save();

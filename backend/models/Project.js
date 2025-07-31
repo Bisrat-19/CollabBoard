@@ -18,11 +18,6 @@ const projectSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
-    status: {
-      type: String,
-      enum: ['active', 'archived', 'completed'],
-      default: 'active',
-    },
   },
   { timestamps: true }
 );

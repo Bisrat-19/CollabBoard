@@ -13,6 +13,7 @@ import { TaskColumn } from "./task-column"
 import { TaskDialog } from "./task-dialog"
 import { CreateTaskDialog } from "./create-task-dialog"
 import { ManageMembersDialog } from "./manage-members-dialog"
+import { ProjectSettingsDialog } from "./project-settings-dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface ProjectBoardProps {
@@ -28,6 +29,7 @@ export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardPro
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [showCreateTask, setShowCreateTask] = useState(false)
   const [showMembersDialog, setShowMembersDialog] = useState(false)
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [createTaskColumn, setCreateTaskColumn] = useState<string>("")
   const [currentProject, setCurrentProject] = useState<Project>(project)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -139,6 +141,16 @@ export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardPro
     loadBoard();
   }
 
+  const handleProjectUpdated = (updatedProject: Project) => {
+    setCurrentProject(updatedProject)
+    setShowSettingsDialog(false)
+  }
+
+  const handleProjectDeleted = () => {
+    // Navigate back to dashboard when project is deleted
+    onBack()
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -213,6 +225,10 @@ export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardPro
                     <Users className="h-4 w-4 mr-2" />
                     Manage Members
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowSettingsDialog(true)}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Project Settings
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleCreateTask("todo")}>
                     <Plus className="h-4 w-4 mr-2" />
                     New Task
@@ -281,7 +297,7 @@ export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardPro
                     <Users className="h-4 w-4 mr-2" />
                     Manage Members
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowSettingsDialog(true)}>
                     <Settings className="h-4 w-4 mr-2" />
                     Project Settings
                   </DropdownMenuItem>
@@ -412,6 +428,15 @@ export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardPro
         project={currentProject}
         onMembersUpdated={handleMembersUpdated}
         currentUser={user || undefined}
+      />
+
+      {/* Project Settings Dialog */}
+      <ProjectSettingsDialog
+        isOpen={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
+        project={currentProject}
+        onProjectUpdated={handleProjectUpdated}
+        onProjectDeleted={handleProjectDeleted}
       />
     </div>
   )

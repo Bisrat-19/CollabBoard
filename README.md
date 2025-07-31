@@ -28,6 +28,7 @@
 - Create and manage multiple projects
 - Add or remove team members from projects
 - View detailed team member profiles
+- **Project Settings**: Update project details and delete projects (creator-only access)
 
 ### ✅ Task Management
 - Create, assign, update, and track tasks per project

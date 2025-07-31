@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, UserIcon, Calendar, Tag, MessageCircle, Clock } from "lucide-react"
+import { Loader2, UserIcon, Calendar, Tag, MessageCircle, Clock, CheckCircle, AlertCircle, Info } from "lucide-react"
 import { TaskComments } from "./task-comments"
 
 interface TaskDialogProps {
@@ -132,246 +132,291 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl sm:max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl font-bold">Task Details</DialogTitle>
-          <DialogDescription className="text-sm sm:text-base">View and edit the details of this task, including comments and assignments.</DialogDescription>
-        </DialogHeader>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Main Content - Left Column */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-sm font-medium">Title</Label>
-              <Input
-                id="title"
-                value={editedTask.title}
-                onChange={(e) => setEditedTask((prev) => ({ ...prev, title: e.target.value }))}
-                className="text-base sm:text-lg font-medium"
-              />
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg">
+              <Info className="h-5 w-5 text-white" />
             </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-              <Textarea
-                id="description"
-                value={editedTask.description}
-                onChange={(e) =>
-                  setEditedTask((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                rows={4}
-                className="min-h-[100px] sm:min-h-[120px]"
-                placeholder="Describe the task in detail..."
-              />
-            </div>
-
-            {/* Labels */}
-            <div className="space-y-2">
-              <Label htmlFor="labels" className="text-sm font-medium flex items-center gap-2">
-                <Tag className="h-4 w-4" />
-                Labels
-              </Label>
-              <Input
-                id="labels"
-                value={editedTask.labels.join(", ")}
-                onChange={(e) =>
-                  setEditedTask((prev) => ({
-                    ...prev,
-                    labels: e.target.value
-                      .split(",")
-                      .map((l) => l.trim())
-                      .filter(Boolean),
-                  }))
-                }
-                placeholder="Enter labels separated by commas"
-              />
-              <div className="flex flex-wrap gap-2 mt-2">
-                {editedTask.labels.map((label) => (
-                  <Badge key={label} variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
-                    {label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Comments Section */}
-            <div className="border-t pt-4 sm:pt-6">
-              <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
-                <h3 className="text-base sm:text-lg font-semibold">Comments</h3>
-              </div>
-              <TaskComments task={editedTask} onCommentAdded={handleCommentAdded} />
+            <div>
+              <DialogTitle className="text-xl font-bold text-gray-900">Task Details</DialogTitle>
+              <DialogDescription className="text-gray-600 mt-1">
+                View and edit the details of this task, including comments and assignments.
+              </DialogDescription>
             </div>
           </div>
+        </DialogHeader>
 
-          {/* Sidebar - Right Column */}
-          <div className="space-y-4 sm:space-y-6">
-            {/* Status */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Status</Label>
-              <Select
-                value={editedTask.status}
-                onValueChange={(value: "todo" | "in-progress" | "done") =>
-                  setEditedTask((prev) => ({ ...prev, status: value }))
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem key="todo" value="todo">To Do</SelectItem>
-                  <SelectItem key="in-progress" value="in-progress">In Progress</SelectItem>
-                  <SelectItem key="done" value="done">Done</SelectItem>
-                </SelectContent>
-              </Select>
-              <Badge className={`w-full justify-center text-xs sm:text-sm ${getStatusColor(editedTask.status)}`}>
-                {editedTask.status === "todo" ? "To Do" : 
-                 editedTask.status === "in-progress" ? "In Progress" : "Done"}
-              </Badge>
-            </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Content - Left Column */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Title */}
+              <div className="space-y-3">
+                <Label htmlFor="title" className="text-sm font-medium text-gray-700">Task Title</Label>
+                <Input
+                  id="title"
+                  value={editedTask.title}
+                  onChange={(e) => setEditedTask((prev) => ({ ...prev, title: e.target.value }))}
+                  className="text-lg font-semibold border-2 focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Enter task title..."
+                />
+              </div>
 
-            {/* Priority */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Priority</Label>
-              <Select
-                value={editedTask.priority}
-                onValueChange={(value: "low" | "medium" | "high") =>
-                  setEditedTask((prev) => ({ ...prev, priority: value }))
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem key="low" value="low">Low</SelectItem>
-                  <SelectItem key="medium" value="medium">Medium</SelectItem>
-                  <SelectItem key="high" value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-              <Badge className={`w-full justify-center text-xs sm:text-sm ${getPriorityColor(editedTask.priority)}`}>
-                {editedTask.priority.charAt(0).toUpperCase() + editedTask.priority.slice(1)}
-              </Badge>
-            </div>
-
-            {/* Assigned To */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Assigned To</Label>
-              <Select
-                value={editedTask.assignedTo?.id || "unassigned"}
-                onValueChange={(value) => {
-                  if (value === "unassigned") {
-                    setEditedTask((prev) => ({ ...prev, assignedTo: undefined }))
-                  } else {
-                    const member = projectMembers.find((m) => m.id === value)
-                    setEditedTask((prev) => ({ ...prev, assignedTo: member }))
+              {/* Description */}
+              <div className="space-y-3">
+                <Label htmlFor="description" className="text-sm font-medium text-gray-700">Description</Label>
+                <Textarea
+                  id="description"
+                  value={editedTask.description}
+                  onChange={(e) =>
+                    setEditedTask((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
                   }
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select assignee">
-                    {editedTask.assignedTo ? (
-                      <div className="flex items-center">
-                        <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
-                          <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
-                            {editedTask.assignedTo.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <div className="font-medium text-sm truncate">{editedTask.assignedTo.name}</div>
-                          <div className="text-xs text-gray-500 truncate">{editedTask.assignedTo.email}</div>
+                  rows={5}
+                  className="min-h-[120px] border-2 focus:border-blue-500 focus:ring-blue-500 resize-none"
+                  placeholder="Describe the task in detail..."
+                />
+              </div>
+
+              {/* Labels */}
+              <div className="space-y-3">
+                <Label htmlFor="labels" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  Labels
+                </Label>
+                <Input
+                  id="labels"
+                  value={editedTask.labels.join(", ")}
+                  onChange={(e) =>
+                    setEditedTask((prev) => ({
+                      ...prev,
+                      labels: e.target.value
+                        .split(",")
+                        .map((l) => l.trim())
+                        .filter(Boolean),
+                    }))
+                  }
+                  placeholder="Enter labels separated by commas"
+                  className="border-2 focus:border-blue-500 focus:ring-blue-500"
+                />
+                <div className="flex flex-wrap gap-2">
+                  {editedTask.labels.map((label) => (
+                    <Badge key={label} variant="secondary" className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-medium px-3 py-1">
+                      {label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Comments Section */}
+              <div className="border-t border-gray-200 pt-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <MessageCircle className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">Comments</h3>
+                </div>
+                <TaskComments task={editedTask} onCommentAdded={handleCommentAdded} />
+              </div>
+            </div>
+
+            {/* Sidebar - Right Column */}
+            <div className="space-y-6">
+              {/* Status */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-700">Status</Label>
+                <Select
+                  value={editedTask.status}
+                  onValueChange={(value: "todo" | "in-progress" | "done") =>
+                    setEditedTask((prev) => ({ ...prev, status: value }))
+                  }
+                >
+                  <SelectTrigger className="w-full border-2 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem key="todo" value="todo">To Do</SelectItem>
+                    <SelectItem key="in-progress" value="in-progress">In Progress</SelectItem>
+                    <SelectItem key="done" value="done">Done</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Badge className={`w-full justify-center text-sm font-medium py-2 ${getStatusColor(editedTask.status)}`}>
+                  {editedTask.status === "todo" ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      To Do
+                    </div>
+                  ) : editedTask.status === "in-progress" ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      In Progress
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Done
+                    </div>
+                  )}
+                </Badge>
+              </div>
+
+              {/* Priority */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-700">Priority</Label>
+                <Select
+                  value={editedTask.priority}
+                  onValueChange={(value: "low" | "medium" | "high") =>
+                    setEditedTask((prev) => ({ ...prev, priority: value }))
+                  }
+                >
+                  <SelectTrigger className="w-full border-2 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem key="low" value="low">Low</SelectItem>
+                    <SelectItem key="medium" value="medium">Medium</SelectItem>
+                    <SelectItem key="high" value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Badge className={`w-full justify-center text-sm font-medium py-2 ${getPriorityColor(editedTask.priority)}`}>
+                  {editedTask.priority === "high" ? (
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      High Priority
+                    </div>
+                  ) : editedTask.priority === "medium" ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                      Medium Priority
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      Low Priority
+                    </div>
+                  )}
+                </Badge>
+              </div>
+
+              {/* Assigned To */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-700">Assigned To</Label>
+                <Select
+                  value={editedTask.assignedTo?.id || "unassigned"}
+                  onValueChange={(value) => {
+                    if (value === "unassigned") {
+                      setEditedTask((prev) => ({ ...prev, assignedTo: undefined }))
+                    } else {
+                      const member = projectMembers.find((m) => m.id === value)
+                      setEditedTask((prev) => ({ ...prev, assignedTo: member }))
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full border-2 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectValue placeholder="Select assignee">
+                      {editedTask.assignedTo ? (
+                        <div className="flex items-center">
+                          <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
+                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
+                              {editedTask.assignedTo.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <div className="font-medium text-sm truncate">{editedTask.assignedTo.name}</div>
+                            <div className="text-xs text-gray-500 truncate">{editedTask.assignedTo.email}</div>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center text-gray-500">
+                      ) : (
+                        <div className="flex items-center text-gray-500">
+                          <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
+                            <UserIcon className="h-3 w-3" />
+                          </div>
+                          <span className="text-sm">Unassigned</span>
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem key="unassigned" value="unassigned">
+                      <div className="flex items-center">
                         <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
-                          <UserIcon className="h-3 w-3" />
+                          <UserIcon className="h-3 w-3 text-gray-500" />
                         </div>
                         <span className="text-sm">Unassigned</span>
                       </div>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem key="unassigned" value="unassigned">
-                    <div className="flex items-center">
-                      <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
-                        <UserIcon className="h-3 w-3 text-gray-500" />
-                      </div>
-                      <span className="text-sm">Unassigned</span>
-                    </div>
-                  </SelectItem>
-                  {projectMembers.map((member, idx) => (
-                    <SelectItem key={member.id || `member-${idx}`} value={member.id}>
-                      <div className="flex items-center">
-                        <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
-                          <AvatarImage src={member.avatar || "/placeholder.svg"} />
-                          <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs">
-                            {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <div className="font-medium text-sm truncate">{member.name}</div>
-                          <div className="text-xs text-gray-500 truncate">{member.email}</div>
-                        </div>
-                      </div>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                    {projectMembers.map((member, idx) => (
+                      <SelectItem key={member.id || `member-${idx}`} value={member.id}>
+                        <div className="flex items-center">
+                          <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
+                            <AvatarImage src={member.avatar || "/placeholder.svg"} />
+                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs">
+                              {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <div className="font-medium text-sm truncate">{member.name}</div>
+                            <div className="text-xs text-gray-500 truncate">{member.email}</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Due Date */}
-            <div className="space-y-2">
-              <Label htmlFor="dueDate" className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Due Date
-              </Label>
-              <Input
-                id="dueDate"
-                type="date"
-                value={editedTask.dueDate ? editedTask.dueDate.split("T")[0] : ""}
-                onChange={(e) =>
-                  setEditedTask((prev) => ({
-                    ...prev,
-                    dueDate: e.target.value ? e.target.value : undefined,
-                  }))
-                }
-              />
-            </div>
+              {/* Due Date */}
+              <div className="space-y-3">
+                <Label htmlFor="dueDate" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Due Date
+                </Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={editedTask.dueDate ? editedTask.dueDate.split("T")[0] : ""}
+                  onChange={(e) =>
+                    setEditedTask((prev) => ({
+                      ...prev,
+                      dueDate: e.target.value ? e.target.value : undefined,
+                    }))
+                  }
+                  className="border-2 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
 
-            {/* Created By */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Created By</Label>
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold text-xs sm:text-sm">
-                    {editedTask.createdBy.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <p className="font-medium text-gray-900 text-sm truncate">{editedTask.createdBy.name}</p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {new Date(editedTask.createdAt).toLocaleDateString()}
-                  </p>
+              {/* Created By */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-700">Created By</Label>
+                <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <Avatar className="h-10 w-10 ring-2 ring-white shadow-sm">
+                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white font-semibold text-sm">
+                      {editedTask.createdBy.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-gray-900 text-sm truncate">{editedTask.createdBy.name}</p>
+                    <p className="text-xs text-gray-600 flex items-center gap-1 mt-1">
+                      <Clock className="h-3 w-3" />
+                      {new Date(editedTask.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Save Button */}
-            <Button 
-              onClick={handleSave} 
-              disabled={isLoading} 
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
+              {/* Save Button */}
+              <Button 
+                onClick={handleSave} 
+                disabled={isLoading} 
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
