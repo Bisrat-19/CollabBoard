@@ -91,19 +91,30 @@ export function ProjectSettingsDialog({
 
     try {
       setIsLoading(true)
+      console.log('ProjectSettingsDialog: Starting update for project:', project)
+      
       const updatedProject = await projectService.updateProject(project.id || project._id, {
         name: formData.name.trim(),
         description: formData.description.trim(),
       })
       
+      console.log('ProjectSettingsDialog: Update successful, got:', updatedProject)
       setIsEditing(false)
-      onProjectUpdated?.(updatedProject)
+      
+      // Test if callback exists
+      if (onProjectUpdated) {
+        console.log('ProjectSettingsDialog: onProjectUpdated callback exists, calling it')
+        onProjectUpdated(updatedProject)
+      } else {
+        console.log('ProjectSettingsDialog: onProjectUpdated callback is undefined!')
+      }
       
       toast({
         title: "Project Updated",
         description: "Project settings have been updated successfully.",
       })
     } catch (error: any) {
+      console.error('ProjectSettingsDialog: Update failed:', error)
       toast({
         title: "Error",
         description: error.message || "Failed to update project. Please try again.",
@@ -120,6 +131,7 @@ export function ProjectSettingsDialog({
       await projectService.deleteProject(project.id || project._id)
       setShowDeleteDialog(false)
       onClose()
+      console.log('ProjectSettingsDialog: calling onProjectDeleted')
       onProjectDeleted?.()
       
       toast({

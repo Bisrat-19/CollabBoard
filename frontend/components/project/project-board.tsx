@@ -20,9 +20,16 @@ interface ProjectBoardProps {
   project: Project
   onBack: () => void
   onTaskUpdated?: () => void
+  onProjectUpdated?: (updatedProject: Project) => void
+  onProjectDeleted?: () => void
 }
 
-export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardProps) {
+export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated, onProjectDeleted }: ProjectBoardProps) {
+  console.log('ProjectBoard: Received props:', { 
+    project, 
+    hasOnProjectUpdated: !!onProjectUpdated, 
+    hasOnProjectDeleted: !!onProjectDeleted 
+  })
   const { user } = useAuth()
   const [board, setBoard] = useState<Board | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -142,13 +149,17 @@ export function ProjectBoard({ project, onBack, onTaskUpdated }: ProjectBoardPro
   }
 
   const handleProjectUpdated = (updatedProject: Project) => {
+    console.log('ProjectBoard: handleProjectUpdated called with:', updatedProject)
     setCurrentProject(updatedProject)
     setShowSettingsDialog(false)
+    // Notify parent component about the project update
+    onProjectUpdated?.(updatedProject)
   }
 
   const handleProjectDeleted = () => {
-    // Navigate back to dashboard when project is deleted
-    onBack()
+    console.log('ProjectBoard: handleProjectDeleted called')
+    // Notify parent component about the project deletion
+    onProjectDeleted?.()
   }
 
   if (isLoading) {

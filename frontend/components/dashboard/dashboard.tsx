@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Users, Calendar, Settings, LogOut, Loader2 } from "lucide-react"
+import { Plus, Users, Calendar, Settings, LogOut, Loader2, TrendingUp } from "lucide-react"
 import { CreateProjectDialog } from "./create-project-dialog"
 import { ProjectBoard } from "../project/project-board"
 import { AdminPanel } from "../admin/admin-panel"
@@ -35,22 +35,13 @@ export function Dashboard() {
   const loadProjects = async () => {
     try {
       const data = await projectService.getProjects();
-      // Map _id to id for all projects
-      const mapped = data.map((p: any) => ({
-        id: p.id || p._id,
-        name: p.name,
-        description: p.description,
-        members: p.members,
-        ownerId: p.ownerId,
-        createdBy: p.createdBy, // Add createdBy field from backend
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
-      }));
-             // Sort projects by createdAt in descending order (newest first)
-       const sortedProjects = mapped.sort((a: any, b: any) => 
-         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-       );
-       setProjects(sortedProjects as Project[]);
+      console.log('Dashboard: Projects from service:', data);
+      
+      // Sort projects by createdAt in descending order (newest first)
+      const sortedProjects = data.sort((a: any, b: any) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setProjects(sortedProjects as Project[]);
     } catch (error) {
       console.error("Failed to load projects:", error);
     } finally {
@@ -59,13 +50,62 @@ export function Dashboard() {
   }
 
      const handleProjectCreated = (project: Project) => {
+     console.log('Dashboard: Project created:', project)
      // Add new project to the beginning of the list (newest first)
      setProjects((prev) => [project, ...prev])
      setShowCreateDialog(false)
    }
 
   if (selectedProject) {
-    return <ProjectBoard project={selectedProject} onBack={() => setSelectedProject(null)} />
+    console.log('Dashboard: Rendering ProjectBoard with selectedProject:', selectedProject)
+    
+    const handleProjectUpdated = (updatedProject: Project) => {
+      console.log('Dashboard: handleProjectUpdated called with:', updatedProject)
+      // Update the project in the dashboard's project list
+      setProjects(prev => {
+        console.log('Dashboard: current projects:', prev)
+        const updated = prev.map(p => {
+          const pId = p.id || p._id;
+          const updatedId = updatedProject.id || updatedProject._id;
+          console.log('Dashboard: comparing', pId, 'with', updatedId, 'types:', typeof pId, typeof updatedId)
+          const isMatch = pId === updatedId || pId?.toString() === updatedId?.toString();
+          console.log('Dashboard: isMatch:', isMatch)
+          return isMatch ? updatedProject : p;
+        });
+        console.log('Dashboard: updated projects:', updated)
+        return updated;
+      })
+      // Update the selected project
+      setSelectedProject(updatedProject)
+    }
+
+    const handleProjectDeleted = () => {
+      console.log('Dashboard: handleProjectDeleted called')
+      // Remove the project from the dashboard's project list
+      const selectedId = selectedProject.id || selectedProject._id;
+      console.log('Dashboard: removing project with id:', selectedId)
+      setProjects(prev => {
+        console.log('Dashboard: current projects before deletion:', prev)
+        const filtered = prev.filter(p => {
+          const pId = p.id || p._id;
+          const isMatch = pId === selectedId || pId?.toString() === selectedId?.toString();
+          return !isMatch;
+        });
+        console.log('Dashboard: projects after deletion:', filtered)
+        return filtered;
+      })
+      // Go back to dashboard
+      setSelectedProject(null)
+    }
+
+    return (
+      <ProjectBoard 
+        project={selectedProject} 
+        onBack={() => setSelectedProject(null)}
+        onProjectUpdated={handleProjectUpdated}
+        onProjectDeleted={handleProjectDeleted}
+      />
+    )
   }
 
   if (showAdminPanel && user?.role === "admin") {

@@ -209,6 +209,43 @@ export function EnhancedDashboard() {
       project={selectedProject} 
       onBack={() => setSelectedProject(null)} 
       onTaskUpdated={() => loadData()}
+      onProjectUpdated={(updatedProject) => {
+        console.log('EnhancedDashboard: onProjectUpdated called with:', updatedProject)
+        // Update the project in the dashboard's project list
+        setProjects(prev => {
+          console.log('EnhancedDashboard: current projects:', prev)
+          const updated = prev.map(p => {
+            const pId = p.id || p._id;
+            const updatedId = updatedProject.id || updatedProject._id;
+            console.log('EnhancedDashboard: comparing', pId, 'with', updatedId, 'types:', typeof pId, typeof updatedId)
+            const isMatch = pId === updatedId || pId?.toString() === updatedId?.toString();
+            console.log('EnhancedDashboard: isMatch:', isMatch)
+            return isMatch ? updatedProject : p;
+          });
+          console.log('EnhancedDashboard: updated projects:', updated)
+          return updated;
+        })
+        // Update the selected project
+        setSelectedProject(updatedProject)
+      }}
+      onProjectDeleted={() => {
+        console.log('EnhancedDashboard: onProjectDeleted called')
+        // Remove the project from the dashboard's project list
+        const selectedId = selectedProject.id || selectedProject._id;
+        console.log('EnhancedDashboard: removing project with id:', selectedId)
+        setProjects(prev => {
+          console.log('EnhancedDashboard: current projects before deletion:', prev)
+          const filtered = prev.filter(p => {
+            const pId = p.id || p._id;
+            const isMatch = pId === selectedId || pId?.toString() === selectedId?.toString();
+            return !isMatch;
+          });
+          console.log('EnhancedDashboard: projects after deletion:', filtered)
+          return filtered;
+        })
+        // Go back to dashboard
+        setSelectedProject(null)
+      }}
     />
   }
 

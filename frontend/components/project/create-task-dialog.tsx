@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, UserIcon, Calendar, Tag, AlertCircle } from "lucide-react"
+import { Loader2, UserIcon, Calendar, Tag, AlertCircle, Plus, Target, Clock, UserCheck, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface CreateTaskDialogProps {
@@ -98,76 +98,105 @@ export function CreateTaskDialog({
     }
   }
 
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case "high": return "🔥"
+      case "medium": return "⚡"
+      case "low": return "🌱"
+      default: return "📋"
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
-            Create New Task
-          </DialogTitle>
-          <DialogDescription className="text-sm sm:text-base">Add a new task to the project board with all necessary details.</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-[95vw] sm:max-w-[650px] max-h-[90vh] overflow-y-auto p-0 border-0 shadow-2xl">
+        {/* Header with gradient background */}
+        <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-6 text-white">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <Plus className="h-5 w-5" />
+            </div>
+            <DialogTitle className="text-xl font-bold">Create New Task</DialogTitle>
+          </div>
+          <DialogDescription className="text-blue-100 text-sm leading-relaxed">
+            Add a new task to your project board with all the details needed to get started.
+          </DialogDescription>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 sm:gap-6 py-4">
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-6">
             {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-sm font-medium">Title *</Label>
+            <div className="space-y-3">
+              <Label htmlFor="title" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Target className="h-4 w-4 text-blue-600" />
+                Task Title *
+              </Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                placeholder="Enter task title"
+                placeholder="What needs to be done?"
                 required
-                className="text-base sm:text-lg"
+                className="h-12 text-base border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
               />
             </div>
 
             {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+            <div className="space-y-3">
+              <Label htmlFor="description" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-blue-600" />
+                Description
+              </Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe the task in detail..."
+                placeholder="Provide more details about this task, requirements, or any specific instructions..."
                 rows={3}
-                className="min-h-[80px] sm:min-h-[100px]"
+                className="min-h-[100px] text-base border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
               />
             </div>
 
             {/* Priority and Assignment */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Priority</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                  Priority Level
+                </Label>
                 <Select
                   value={formData.priority}
                   onValueChange={(value: "low" | "medium" | "high") =>
                     setFormData((prev) => ({ ...prev, priority: value }))
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem key="low" value="low">Low</SelectItem>
-                    <SelectItem key="medium" value="medium">Medium</SelectItem>
-                    <SelectItem key="high" value="high">High</SelectItem>
+                    <SelectItem key="low" value="low">Low Priority</SelectItem>
+                    <SelectItem key="medium" value="medium">Medium Priority</SelectItem>
+                    <SelectItem key="high" value="high">High Priority</SelectItem>
                   </SelectContent>
                 </Select>
-                <Badge className={`w-full justify-center text-xs sm:text-sm ${getPriorityColor(formData.priority)}`}>
-                  {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)}
-                </Badge>
+                <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
+                  <span className="text-lg">{getPriorityIcon(formData.priority)}</span>
+                  <Badge className={`text-xs font-medium ${getPriorityColor(formData.priority)}`}>
+                    {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)} Priority
+                  </Badge>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Assign To</Label>
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-blue-600" />
+                  Assign To
+                </Label>
                 <Select
                   value={formData.assignedToId}
                   onValueChange={(value) => setFormData((prev) => ({ ...prev, assignedToId: value }))}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200">
                     <SelectValue placeholder="Select team member">
                       {formData.assignedToId && formData.assignedToId !== "unassigned" && (
                         <div className="flex items-center">
@@ -175,8 +204,8 @@ export function CreateTaskDialog({
                             const member = projectMembers.find((m) => m.id === formData.assignedToId)
                             return member ? (
                               <>
-                                <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
-                                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
+                                <Avatar className="h-6 w-6 mr-2">
+                                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-xs font-semibold">
                                     {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
                                   </AvatarFallback>
                                 </Avatar>
@@ -191,7 +220,7 @@ export function CreateTaskDialog({
                   <SelectContent>
                     <SelectItem key="unassigned" value="unassigned">
                       <div className="flex items-center">
-                        <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
+                        <div className="h-6 w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
                           <UserIcon className="h-3 w-3 text-gray-500" />
                         </div>
                         <span className="text-sm">Unassigned</span>
@@ -200,8 +229,8 @@ export function CreateTaskDialog({
                     {projectMembers.map((member, idx) => (
                       <SelectItem key={member.id || `member-${idx}`} value={member.id}>
                         <div className="flex items-center">
-                          <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
-                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
+                          <Avatar className="h-6 w-6 mr-2">
+                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-xs font-semibold">
                               {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
                             </AvatarFallback>
                           </Avatar>
@@ -218,9 +247,9 @@ export function CreateTaskDialog({
             </div>
 
             {/* Due Date */}
-            <div className="space-y-2">
-              <Label htmlFor="dueDate" className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
+            <div className="space-y-3">
+              <Label htmlFor="dueDate" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-blue-600" />
                 Due Date (Optional)
               </Label>
               <Input
@@ -233,13 +262,14 @@ export function CreateTaskDialog({
                     dueDate: e.target.value || undefined,
                   }))
                 }
+                className="h-12 border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
               />
             </div>
 
             {/* Labels */}
-            <div className="space-y-2">
-              <Label htmlFor="labels" className="text-sm font-medium flex items-center gap-2">
-                <Tag className="h-4 w-4" />
+            <div className="space-y-3">
+              <Label htmlFor="labels" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Tag className="h-4 w-4 text-blue-600" />
                 Labels (Optional)
               </Label>
               <Input
@@ -254,29 +284,71 @@ export function CreateTaskDialog({
                       .filter(Boolean),
                   }))
                 }
-                placeholder="Enter labels separated by commas"
+                placeholder="Enter labels separated by commas (e.g., bug, feature, design)"
+                className="border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
               />
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.labels.map((label) => (
-                  <Badge key={label} variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
-                    {label}
-                  </Badge>
-                ))}
+              {formData.labels.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                  {formData.labels.map((label) => (
+                    <Badge key={label} variant="secondary" className="bg-blue-100 text-blue-800 text-xs font-medium">
+                      {label}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Task Preview */}
+            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 border border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-semibold text-gray-700">Task Preview:</span>
+              </div>
+              <div className="space-y-2 text-xs text-gray-600">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Status: <span className="font-medium text-gray-700">To Do</span></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Priority: <span className="font-medium text-gray-700">{formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)}</span></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Assigned: <span className="font-medium text-gray-700">
+                    {formData.assignedToId === "unassigned" ? "Unassigned" : 
+                     projectMembers.find(m => m.id === formData.assignedToId)?.name || "Unknown"}
+                  </span></span>
+                </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter className="gap-2 flex-col sm:flex-row">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+          <DialogFooter className="flex-col sm:flex-row gap-3 pt-6 mt-6 border-t border-gray-100">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto border-2 hover:bg-gray-50 transition-all duration-200"
+            >
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={isLoading || !formData.title.trim()}
-              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold h-11 px-6 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Task
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Task
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>
