@@ -20,9 +20,27 @@ CollabBoard is designed to streamline team collaboration with advanced features 
 
 ## 🛠️ Technology Stack
 
-**Frontend:** Next.js, TypeScript, Tailwind CSS, shadcn/ui, Socket.IO Client
-**Backend:** Node.js, Express.js, MongoDB Atlas, Socket.IO, JWT
-**Database:** MongoDB Atlas (Cloud)
+### **Frontend Technologies**
+- **Framework:** Next.js (React)
+- **Language:** TypeScript 
+- **Styling:** Tailwind CSS 
+- **UI Components:** shadcn/ui (Radix UI primitives)
+- **Real-time Communication:** Socket.IO Client
+- **HTTP Client:** Axios 
+
+### **Backend Technologies**
+- **Runtime:** Node.js with Express.js 
+- **Language:** JavaScript (ES6+)
+- **Database:** MongoDB Atlas (Cloud Database)
+- **Authentication:** JWT 
+- **Real-time Communication:** Socket.IO 
+
+### **Database Schema**
+- **Users:** Authentication, roles, profiles
+- **Projects:** Team collaboration spaces
+- **Tasks:** Work items with status tracking
+- **Messages:** Real-time communication
+- **Notifications:** System alerts and updates
 
 ---
 
