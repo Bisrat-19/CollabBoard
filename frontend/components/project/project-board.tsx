@@ -91,18 +91,12 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
                 return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
               }).length
             } else {
-              // If last seen message not found, count all messages from others
-              unseenCount = messages.filter(message => {
-                const senderId = message.sender.id || message.sender._id
-                return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
-              }).length
+              // If last seen message not found, assume all messages are seen (don't count them)
+              unseenCount = 0
             }
           } else {
-            // No last seen message, count all messages from others
-            unseenCount = messages.filter(message => {
-              const senderId = message.sender.id || message.sender._id
-              return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
-            }).length
+            // No last seen message, assume all existing messages are seen (don't count them)
+            unseenCount = 0
           }
           
           console.log('ProjectBoard: Polling found', unseenCount, 'unseen messages')
@@ -148,7 +142,13 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
                   const senderId = message.sender.id || message.sender._id
                   return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
                 }).length
+              } else {
+                // If last seen message not found, assume all messages are seen (don't count them)
+                unseenCount = 0
               }
+            } else {
+              // No last seen message, assume all existing messages are seen (don't count them)
+              unseenCount = 0
             }
             
             console.log('ProjectBoard: Chat closed, found', unseenCount, 'unseen messages')

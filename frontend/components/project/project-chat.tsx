@@ -147,8 +147,30 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
   useEffect(() => {
     if (isOpen) {
       loadMessages()
+    } else {
+      // When chat is not open, initialize last seen message if not set
+      const currentUserId = user?.id || user?._id
+      if (currentUserId && !lastSeenMessageId.current) {
+        const lastSeenKey = `lastSeenMessage_${project.id}_${currentUserId}`
+        const savedLastSeen = localStorage.getItem(lastSeenKey)
+        if (!savedLastSeen) {
+          // If no last seen message is saved, get the latest message and mark it as seen
+          messageService.getProjectMessages(project.id).then(messages => {
+            if (messages.length > 0) {
+              const lastMessage = messages[messages.length - 1]
+              lastSeenMessageId.current = lastMessage._id
+              localStorage.setItem(lastSeenKey, lastMessage._id)
+              console.log('ProjectChat: Initialized last seen message ID:', lastMessage._id)
+            }
+          }).catch(error => {
+            console.error('Failed to initialize last seen message:', error)
+          })
+        } else {
+          lastSeenMessageId.current = savedLastSeen
+        }
+      }
     }
-  }, [isOpen, project.id])
+  }, [isOpen, project.id, user])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
