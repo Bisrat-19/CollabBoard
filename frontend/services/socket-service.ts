@@ -9,7 +9,7 @@ class SocketService {
     if (this.socket && this.isConnected) return;
 
     const serverUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://your-backend-url.com' 
+      ? 'https://collabboard-backend-bli2.onrender.com' 
       : 'http://localhost:5000';
 
     this.socket = io(serverUrl, {
