@@ -20,131 +20,22 @@ CollabBoard is designed to streamline team collaboration with advanced features 
 
 ## 🛠️ Technology Stack
 
-### **Frontend Technologies**
-- **Framework:** Next.js (React)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **UI Components:** shadcn/ui (Radix UI primitives)
-- **Icons:** Lucide React
-- **State Management:** React Context API
-- **Forms:** React Hook Form + Zod validation
-- **Real-time Communication:** Socket.IO Client
-- **HTTP Client:** Axios
-- **Date Handling:** date-fns
-- **Charts:** Recharts
-- **Notifications:** Sonner
-
-### **Backend Technologies**
-- **Runtime:** Node.js with Express.js
-- **Language:** JavaScript (ES6+)
-- **Database:** MongoDB Atlas (Cloud Database)
-- **Authentication:** JWT (jsonwebtoken)
-- **Password Hashing:** bcryptjs
-- **Real-time Communication:** Socket.IO
-- **CORS:** cors
-- **Environment:** dotenv
-- **Development:** nodemon
-
-### **Database Schema**
-- **Users:** Authentication, roles, profiles
-- **Projects:** Team collaboration spaces
-- **Tasks:** Work items with status tracking
-- **Messages:** Real-time communication
-- **Notifications:** System alerts and updates
+**Frontend:** Next.js, TypeScript, Tailwind CSS, shadcn/ui, Socket.IO Client
+**Backend:** Node.js, Express.js, MongoDB Atlas, Socket.IO, JWT
+**Database:** MongoDB Atlas (Cloud)
 
 ---
 
 ## ✨ Core Features
 
-### 🔐 **Authentication & Authorization**
-- **Secure JWT-based authentication**
-- **Role-based access control (Admin, Member)**
-- **Protected routes and middleware**
-- **Session management with credentials**
-
-### 👨‍💼 **Admin Dashboard & Management**
-- **User Management:**
-  - List all users with detailed profiles
-  - Promote users to admin role
-  - Remove users from the system
-  - View user activity and statistics
-- **Analytics Dashboard:**
-  - Total user count and growth metrics
-  - Project statistics and engagement
-  - Admin-to-user ratio tracking
-  - System usage analytics
-- **Project Management:**
-  - Overview of all projects
-  - Project member management
-  - Project performance metrics
-
-### 📁 **Project Management**
-- **Project Creation & Organization:**
-  - Create multiple projects with descriptions
-  - Set project ownership and permissions
-  - Organize projects by teams/departments
-- **Team Member Management:**
-  - Add/remove team members from projects
-  - View detailed member profiles and roles
-  - Track member activity and contributions
-- **Project Settings:**
-  - Update project details (name, description)
-  - Delete projects (creator-only access)
-  - Manage project permissions and access
-
-### ✅ **Advanced Task Management**
-- **Task Creation & Assignment:**
-  - Create tasks with detailed descriptions
-  - Assign tasks to team members
-  - Set priority levels (Low, Medium, High)
-  - Add due dates and labels
-- **Kanban Board Interface:**
-  - Drag-and-drop task organization
-  - Status columns: Todo, In Progress, Done
-  - Visual task progression tracking
-- **Task Details & Collaboration:**
-  - Rich task descriptions and attachments
-  - Comment system for task discussions
-  - Task history and activity tracking
-  - Real-time task updates
-
-### 💬 **Real-time Communication**
-- **Project Chat System:**
-  - Real-time messaging within projects
-  - Message editing and deletion
-  - Typing indicators
-  - Message history and search
-- **Socket.IO Integration:**
-  - Live updates across all connected clients
-  - Room-based messaging (project-specific)
-  - Connection status management
-  - Automatic reconnection handling
-
-### 🔔 **Notification System**
-- **Real-time Notifications:**
-  - Task assignments and updates
-  - Project invitations and changes
-  - System announcements
-  - Custom notification types
-- **Notification Management:**
-  - Mark notifications as read/unread
-  - Delete notifications
-  - Notification preferences
-  - Push notifications support
-
-### 📊 **Dashboard & Analytics**
-- **Overview Dashboard:**
-  - Summary cards with key metrics
-  - Total members, admins, and projects
-  - Recent activity feed
-- **Team Insights:**
-  - Team member cards with roles
-  - Join dates and project involvement
-  - Performance metrics
-- **Project Analytics:**
-  - Task completion rates
-  - Team productivity metrics
-  - Project timeline tracking
+- 🔐 **Authentication & Authorization** - JWT-based with role-based access
+- 👨‍💼 **Admin Dashboard** - User management, analytics, project oversight
+- 📁 **Project Management** - Create, organize, and manage team projects
+- ✅ **Task Management** - Kanban board with drag-and-drop functionality
+- 💬 **Real-time Chat** - Project-specific messaging with Socket.IO
+- 🔔 **Notifications** - Real-time alerts and updates
+- 📊 **Analytics** - Team insights and project metrics
+- 🎨 **Modern UI** - Responsive design with dark/light themes
 
 ---
 
@@ -281,23 +172,9 @@ CollabBoard/
 
 ## 🌐 Deployment
 
-### **Backend Deployment (Render)**
-- Connect your GitHub repository
-- Set environment variables
-- Deploy automatically on push
-
-### **Frontend Deployment (Vercel)**
-- Connect your GitHub repository
-- Configure build settings
-- Deploy automatically on push
-
-### **Environment Variables for Production**
-```env
-MONGO_URI=your_production_mongodb_atlas_uri
-JWT_SECRET=your_production_jwt_secret
-NODE_ENV=production
-FRONTEND_URL=https://your-frontend-domain.com
-```
+- **Frontend:** Deployed on Vercel
+- **Backend:** Deployed on Render
+- **Database:** MongoDB Atlas
 
 ---
 
