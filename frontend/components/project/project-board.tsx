@@ -76,11 +76,37 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
         try {
           const messages = await messageService.getProjectMessages(project.id)
           const currentUserId = user?.id || user?._id
-          const unseenMessages = messages.filter(message => {
-            const senderId = message.sender.id || message.sender._id
-            return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
-          })
-          setUnseenMessageCount(unseenMessages.length)
+          
+          // Get the last seen message ID from localStorage
+          const lastSeenKey = `lastSeenMessage_${project.id}_${currentUserId}`
+          const lastSeenMessageId = localStorage.getItem(lastSeenKey)
+          
+          let unseenCount = 0
+          if (lastSeenMessageId) {
+            // Count messages that came after the last seen message
+            const lastSeenIndex = messages.findIndex(msg => msg._id === lastSeenMessageId)
+            if (lastSeenIndex !== -1) {
+              unseenCount = messages.slice(lastSeenIndex + 1).filter(message => {
+                const senderId = message.sender.id || message.sender._id
+                return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
+              }).length
+            } else {
+              // If last seen message not found, count all messages from others
+              unseenCount = messages.filter(message => {
+                const senderId = message.sender.id || message.sender._id
+                return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
+              }).length
+            }
+          } else {
+            // No last seen message, count all messages from others
+            unseenCount = messages.filter(message => {
+              const senderId = message.sender.id || message.sender._id
+              return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
+            }).length
+          }
+          
+          console.log('ProjectBoard: Polling found', unseenCount, 'unseen messages')
+          setUnseenMessageCount(unseenCount)
         } catch (error) {
           console.error('Failed to check for new messages:', error)
         }
@@ -93,6 +119,47 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
       const interval = setInterval(checkForNewMessages, 30000)
 
       return () => clearInterval(interval)
+    }
+  }, [showChat, project?.id, user?.id, user?._id])
+
+  // Clear unseen count when chat is opened (separate effect to ensure it runs)
+  useEffect(() => {
+    if (showChat) {
+      console.log('ProjectBoard: Chat opened, clearing unseen count')
+      setUnseenMessageCount(0)
+    } else {
+      // When chat is closed, check for new messages immediately
+      if (project?.id) {
+        const checkForNewMessages = async () => {
+          try {
+            const messages = await messageService.getProjectMessages(project.id)
+            const currentUserId = user?.id || user?._id
+            
+            // Get the last seen message ID from localStorage
+            const lastSeenKey = `lastSeenMessage_${project.id}_${currentUserId}`
+            const lastSeenMessageId = localStorage.getItem(lastSeenKey)
+            
+            let unseenCount = 0
+            if (lastSeenMessageId) {
+              // Count messages that came after the last seen message
+              const lastSeenIndex = messages.findIndex(msg => msg._id === lastSeenMessageId)
+              if (lastSeenIndex !== -1) {
+                unseenCount = messages.slice(lastSeenIndex + 1).filter(message => {
+                  const senderId = message.sender.id || message.sender._id
+                  return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
+                }).length
+              }
+            }
+            
+            console.log('ProjectBoard: Chat closed, found', unseenCount, 'unseen messages')
+            setUnseenMessageCount(unseenCount)
+          } catch (error) {
+            console.error('Failed to check for new messages:', error)
+          }
+        }
+        
+        checkForNewMessages()
+      }
     }
   }, [showChat, project?.id, user?.id, user?._id])
   
@@ -194,6 +261,7 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
   }
 
   const handleMessageCountChange = (count: number) => {
+    console.log('ProjectBoard: Message count changed to:', count)
     setUnseenMessageCount(count)
   }
 
@@ -267,7 +335,10 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setShowChat(true)} className="relative">
+                                     <DropdownMenuItem onClick={() => {
+                     setShowChat(true)
+                     setUnseenMessageCount(0) // Clear immediately when clicked
+                   }} className="relative">
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Discussion
                     {unseenMessageCount > 0 && (
@@ -340,11 +411,14 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
               </div>
 
               {/* Chat Button */}
-              <Button
-                variant="outline"
-                onClick={() => setShowChat(true)}
-                className="hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200 bg-transparent relative"
-              >
+                             <Button
+                 variant="outline"
+                 onClick={() => {
+                   setShowChat(true)
+                   setUnseenMessageCount(0) // Clear immediately when clicked
+                 }}
+                 className="hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200 bg-transparent relative"
+               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 <span className="hidden lg:inline">Discussion</span>
                 {unseenMessageCount > 0 && (

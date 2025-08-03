@@ -106,19 +106,22 @@ exports.createTask = async (req, res) => {
 
     const savedTask = await newTask.save();
 
-    // Create notification if task is assigned to someone
+    // Create notification if task is assigned to someone (but not to self)
     if (assignedTo && assignedTo !== 'unassigned') {
-      const Project = require('../models/Project');
-      const project = await Project.findById(req.params.projectId);
-      if (project) {
-        await createTaskAssignmentNotification(
-          assignedTo,
-          savedTask._id,
-          req.params.projectId,
-          req.user.name,
-          title,
-          project.name
-        );
+      // Don't send notification if assigning to self
+      if (assignedTo !== req.user._id.toString()) {
+        const Project = require('../models/Project');
+        const project = await Project.findById(req.params.projectId);
+        if (project) {
+          await createTaskAssignmentNotification(
+            assignedTo,
+            savedTask._id,
+            req.params.projectId,
+            req.user.name,
+            title,
+            project.name
+          );
+        }
       }
     }
 
@@ -206,13 +209,13 @@ exports.updateTask = async (req, res) => {
 
     if (!updatedTask) return res.status(404).json({ message: 'Task not found' });
 
-    // Create notification if task assignment is changing
+    // Create notification if task assignment is changing (but not to self)
     if (assignedTo && assignedTo !== 'unassigned') {
       const currentAssignedTo = currentTask.assignedTo ? currentTask.assignedTo.toString() : null;
       const newAssignedTo = assignedTo;
       
-      // Only create notification if assignment is actually changing
-      if (currentAssignedTo !== newAssignedTo) {
+      // Only create notification if assignment is actually changing and not assigning to self
+      if (currentAssignedTo !== newAssignedTo && newAssignedTo !== req.user._id.toString()) {
         const Project = require('../models/Project');
         const project = await Project.findById(currentTask.project);
         if (project) {

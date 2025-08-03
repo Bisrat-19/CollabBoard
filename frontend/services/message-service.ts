@@ -38,7 +38,8 @@ class MessageService {
       throw new Error(error.message || "Failed to send message");
     }
 
-    return response.json();
+    const message = await response.json();
+    return message;
   }
 
   async updateMessage(messageId: string, content: string): Promise<Message> {
@@ -54,7 +55,8 @@ class MessageService {
       throw new Error(error.message || "Failed to update message");
     }
 
-    return response.json();
+    const message = await response.json();
+    return message;
   }
 
   async deleteMessage(messageId: string): Promise<void> {

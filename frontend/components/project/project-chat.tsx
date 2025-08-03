@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { MessageCircle, Send, Trash2, Loader2, Edit2, X, Check, Users } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { messageService } from "@/services/message-service"
+import { socketService } from "@/services/socket-service"
 import type { Message, Project } from "@/types"
 import { useToast } from "@/hooks/use-toast"
 
@@ -31,9 +32,103 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState("")
   const [isEditing, setIsEditing] = useState(false)
+  const [typingUsers, setTypingUsers] = useState<{ [key: string]: string }>({})
+  const [isTyping, setIsTyping] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastSeenMessageId = useRef<string | null>(null)
+
+  // Initialize Socket.IO connection
+  useEffect(() => {
+    if (isOpen) {
+      socketService.connect()
+      
+      // Join project room
+      socketService.joinProject(project.id)
+      
+             // Set up real-time event listeners
+       socketService.onNewMessage((message) => {
+         setMessages(prev => [...prev, message])
+         // Update unseen count if message is not from current user and chat is not open
+         if (!isOwnMessage(message) && !isOpen) {
+           setUnseenCount(prev => {
+             const newCount = prev + 1
+             onMessageCountChange?.(newCount)
+             return newCount
+           })
+         }
+         // Mark as seen if chat is open
+         if (isOpen) {
+           lastSeenMessageId.current = message._id
+           
+           // Save the last seen message ID to localStorage
+           const currentUserId = user?.id || user?._id
+           if (currentUserId) {
+             const lastSeenKey = `lastSeenMessage_${project.id}_${currentUserId}`
+             localStorage.setItem(lastSeenKey, message._id)
+           }
+         }
+       })
+
+      socketService.onMessageUpdated((updatedMessage) => {
+        setMessages(prev => prev.map(msg => 
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        ))
+      })
+
+      socketService.onMessageDeleted((messageId) => {
+        setMessages(prev => prev.filter(msg => msg._id !== messageId))
+      })
+
+      socketService.onUserTyping((data) => {
+        if (data.userId !== (user?.id || user?._id)) {
+          setTypingUsers(prev => ({ ...prev, [data.userId]: data.userName }))
+        }
+      })
+
+      socketService.onUserStopTyping((userId) => {
+        setTypingUsers(prev => {
+          const newTypingUsers = { ...prev }
+          delete newTypingUsers[userId]
+          return newTypingUsers
+        })
+      })
+
+      return () => {
+        // Clean up event listeners
+        socketService.offNewMessage()
+        socketService.offMessageUpdated()
+        socketService.offMessageDeleted()
+        socketService.offUserTyping()
+        socketService.offUserStopTyping()
+        socketService.leaveProject(project.id)
+      }
+    }
+  }, [isOpen, project.id, user])
+
+     // Clear unseen count when chat is opened
+   useEffect(() => {
+     if (isOpen) {
+       console.log('ProjectChat: Chat opened, clearing unseen count')
+       setUnseenCount(0)
+       onMessageCountChange?.(0)
+       
+       // Save the last seen message ID to localStorage
+       if (messages.length > 0) {
+         const lastMessage = messages[messages.length - 1]
+         lastSeenMessageId.current = lastMessage._id
+         
+         const currentUserId = user?.id || user?._id
+         if (currentUserId) {
+           const lastSeenKey = `lastSeenMessage_${project.id}_${currentUserId}`
+           localStorage.setItem(lastSeenKey, lastMessage._id)
+           console.log('ProjectChat: Saved last seen message ID:', lastMessage._id)
+         }
+       }
+     }
+   }, [isOpen, onMessageCountChange, messages, project.id, user])
 
   // Prevent background scroll when chat is open
   useEffect(() => {
@@ -50,76 +145,93 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
 
   // Load messages when chat opens
   useEffect(() => {
-    if (isOpen && project.id) {
+    if (isOpen) {
       loadMessages()
     }
   }, [isOpen, project.id])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (scrollAreaRef.current && messages.length > 0) {
-      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
-      if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight
+    if (scrollAreaRef.current && isOpen) {
+      const scrollArea = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollArea) {
+        scrollArea.scrollTop = scrollArea.scrollHeight
       }
     }
-  }, [messages])
-
-  // Scroll to bottom when chat opens
-  useEffect(() => {
-    if (isOpen && messages.length > 0) {
-      setTimeout(() => {
-        if (scrollAreaRef.current) {
-          const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
-          if (scrollElement) {
-            scrollElement.scrollTop = scrollElement.scrollHeight
-          }
-        }
-      }, 100)
-    }
-  }, [isOpen, messages.length])
+  }, [messages, isOpen])
 
   // Focus input when chat opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
     }
   }, [isOpen])
 
-  // Reset unseen count when chat opens
+  // Handle click outside to close
   useEffect(() => {
-    if (isOpen) {
-      setUnseenCount(0)
-      onMessageCountChange?.(0)
+    const handleClickOutside = (event: MouseEvent) => {
+      // Only close if clicking on the backdrop (outside the card)
+      if (isOpen && event.target === event.currentTarget) {
+        onClose()
+      }
     }
-  }, [isOpen, onMessageCountChange])
 
-  const loadMessages = async () => {
-    setIsLoading(true)
-    try {
-      const projectMessages = await messageService.getProjectMessages(project.id)
-      setMessages(projectMessages)
-      
-      // Calculate unseen messages (messages not sent by current user)
-      const currentUserId = user?.id || user?._id
-      const unseenMessages = projectMessages.filter(message => {
-        const senderId = message.sender.id || message.sender._id
-        return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
-      })
-      
-      setUnseenCount(unseenMessages.length)
-      onMessageCountChange?.(unseenMessages.length)
-    } catch (error) {
-      console.error("Failed to load messages:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load messages. Please try again.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoading(false)
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
     }
-  }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen, onClose])
+
+     const loadMessages = async () => {
+     setIsLoading(true)
+     try {
+       const projectMessages = await messageService.getProjectMessages(project.id)
+       setMessages(projectMessages)
+       
+       // When chat is opened, all messages are considered seen
+       if (isOpen) {
+         console.log('ProjectChat: Loading messages, chat is open, clearing count')
+         setUnseenCount(0)
+         onMessageCountChange?.(0)
+         if (projectMessages.length > 0) {
+           const lastMessage = projectMessages[projectMessages.length - 1]
+           lastSeenMessageId.current = lastMessage._id
+           
+           // Save the last seen message ID to localStorage
+           const currentUserId = user?.id || user?._id
+           if (currentUserId) {
+             const lastSeenKey = `lastSeenMessage_${project.id}_${currentUserId}`
+             localStorage.setItem(lastSeenKey, lastMessage._id)
+             console.log('ProjectChat: Saved last seen message ID on load:', lastMessage._id)
+           }
+         }
+       } else {
+         // Calculate unseen messages (messages not sent by current user)
+         const currentUserId = user?.id || user?._id
+         const unseenMessages = projectMessages.filter(message => {
+           const senderId = message.sender.id || message.sender._id
+           return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
+         })
+         
+         setUnseenCount(unseenMessages.length)
+         onMessageCountChange?.(unseenMessages.length)
+       }
+     } catch (error) {
+       console.error("Failed to load messages:", error)
+       toast({
+         title: "Error",
+         description: "Failed to load messages. Please try again.",
+         variant: "destructive"
+       })
+     } finally {
+       setIsLoading(false)
+     }
+   }
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || isSending) return
@@ -129,6 +241,12 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
       const sentMessage = await messageService.sendMessage(project.id, newMessage.trim())
       setMessages(prev => [...prev, sentMessage])
       setNewMessage("")
+      
+      // Emit real-time message to other users
+      socketService.sendMessage(project.id, sentMessage)
+      
+      // Stop typing indicator
+      handleStopTyping()
     } catch (error) {
       console.error("Failed to send message:", error)
       toast({
@@ -145,6 +263,10 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
     try {
       await messageService.deleteMessage(messageId)
       setMessages(prev => prev.filter(msg => msg._id !== messageId))
+      
+      // Emit real-time deletion to other users
+      socketService.deleteMessage(project.id, messageId)
+      
       toast({
         title: "Success",
         description: "Message deleted successfully."
@@ -162,8 +284,7 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
   const handleStartEdit = (message: Message) => {
     setEditingMessageId(message._id)
     setEditContent(message.content)
-    setIsEditing(false) // Reset editing state when starting edit
-    // Focus the edit input after a short delay
+    setIsEditing(false)
     setTimeout(() => editInputRef.current?.focus(), 100)
   }
 
@@ -182,6 +303,10 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
       setMessages(prev => prev.map(msg => 
         msg._id === editingMessageId ? updatedMessage : msg
       ))
+      
+      // Emit real-time update to other users
+      socketService.updateMessage(project.id, updatedMessage)
+      
       setEditingMessageId(null)
       setEditContent("")
       setIsEditing(false)
@@ -198,6 +323,40 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
       })
     } finally {
       setIsEditing(false)
+    }
+  }
+
+  const handleTyping = () => {
+    if (!isTyping) {
+      setIsTyping(true)
+      const currentUserId = user?.id || user?._id
+      const userName = user?.name || ''
+      if (currentUserId) {
+        socketService.startTyping(project.id, currentUserId.toString(), userName)
+      }
+    }
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+
+    // Set new timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      handleStopTyping()
+    }, 2000)
+  }
+
+  const handleStopTyping = () => {
+    setIsTyping(false)
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = null
+    }
+    
+    const currentUserId = user?.id || user?._id
+    if (currentUserId) {
+      socketService.stopTyping(project.id, currentUserId.toString())
     }
   }
 
@@ -252,6 +411,19 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
     return currentDate !== previousDate
   }
 
+  const getTypingIndicator = () => {
+    const typingUserNames = Object.values(typingUsers)
+    if (typingUserNames.length === 0) return null
+    
+    if (typingUserNames.length === 1) {
+      return `${typingUserNames[0]} is typing...`
+    } else if (typingUserNames.length === 2) {
+      return `${typingUserNames[0]} and ${typingUserNames[1]} are typing...`
+    } else {
+      return `${typingUserNames[0]} and ${typingUserNames.length - 1} others are typing...`
+    }
+  }
+
   if (!isOpen) return null
 
   return (
@@ -263,15 +435,25 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
         }
       }}
     >
-      <Card className="w-full max-w-4xl h-[80vh] flex flex-col shadow-2xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden">
-        <CardHeader className="flex-shrink-0 border-b bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
+             <Card className="w-full max-w-4xl h-[80vh] flex flex-col shadow-2xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                 <CardHeader className="flex-shrink-0 border-b bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                 <MessageCircle className="h-6 w-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-xl font-semibold text-white">Project Discussion</CardTitle>
+                <CardTitle className="text-xl font-semibold text-white flex items-center gap-2">
+                  Project Discussion
+                  {unseenCount > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500 hover:bg-red-500"
+                    >
+                      {unseenCount > 99 ? '99+' : unseenCount}
+                    </Badge>
+                  )}
+                </CardTitle>
                 <div className="flex items-center space-x-2 mt-1">
                   <p className="text-sm text-white/90 font-medium">{project.name}</p>
                   <div className="flex items-center space-x-1 text-white/70">
@@ -293,8 +475,8 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col p-0 bg-gray-50/50 overflow-hidden">
-          {/* Messages Area */}
-          <div className="flex-1 overflow-hidden">
+                     {/* Messages Area */}
+           <div className="flex-1 overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <ScrollArea className="h-full" ref={scrollAreaRef}>
               <div className="p-6">
                 {isLoading ? (
@@ -352,6 +534,7 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
                                     value={editContent}
                                     onChange={(e) => setEditContent(e.target.value)}
                                     onKeyPress={handleEditKeyPress}
+                                    onClick={(e) => e.stopPropagation()}
                                     className="flex-1 text-sm border-0 focus-visible:ring-0"
                                     disabled={isEditing}
                                   />
@@ -359,7 +542,10 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
                                     variant="ghost"
                                     size="sm"
                                     className="h-8 w-8 p-0 text-green-500 hover:text-green-600 hover:bg-green-50"
-                                    onClick={handleSaveEdit}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleSaveEdit()
+                                    }}
                                     disabled={isEditing}
                                   >
                                     <Check className="h-4 w-4" />
@@ -368,7 +554,10 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
                                     variant="ghost"
                                     size="sm"
                                     className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                                    onClick={handleCancelEdit}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleCancelEdit()
+                                    }}
                                     disabled={isEditing}
                                   >
                                     <X className="h-4 w-4" />
@@ -389,7 +578,10 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
                                         variant="ghost"
                                         size="sm"
                                         className="h-6 w-6 p-0 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full"
-                                        onClick={() => handleStartEdit(message)}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleStartEdit(message)
+                                        }}
                                       >
                                         <Edit2 className="h-3 w-3" />
                                       </Button>
@@ -397,7 +589,10 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
                                         variant="ghost"
                                         size="sm"
                                         className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full"
-                                        onClick={() => handleDeleteMessage(message._id)}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleDeleteMessage(message._id)
+                                        }}
                                       >
                                         <Trash2 className="h-3 w-3" />
                                       </Button>
@@ -410,34 +605,53 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Typing Indicator */}
+                    {getTypingIndicator() && (
+                      <div className="flex items-center space-x-2 text-gray-500 text-sm italic">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                        <span>{getTypingIndicator()}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </ScrollArea>
           </div>
 
-          {/* Message Input */}
-          <div className="border-t bg-white p-6 flex-shrink-0">
+                     {/* Message Input */}
+           <div className="border-t bg-white p-6 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             <div className="flex space-x-3">
-              <div className="flex-1 relative">
-                <Input
-                  ref={inputRef}
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
-                  disabled={isSending}
-                  className="pr-12 py-3 text-sm border-gray-200 focus:border-purple-500 focus:ring-purple-500 rounded-xl"
-                />
+              <div className="flex-1 relative" onClick={(e) => e.stopPropagation()}>
+                                 <Input
+                   ref={inputRef}
+                   value={newMessage}
+                   onChange={(e) => {
+                     setNewMessage(e.target.value)
+                     handleTyping()
+                   }}
+                   onKeyPress={handleKeyPress}
+                   onClick={(e) => e.stopPropagation()}
+                   placeholder="Type your message..."
+                   disabled={isSending}
+                   className="pr-12 py-3 text-sm border-gray-200 focus:border-purple-500 focus:ring-purple-500 rounded-xl"
+                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400">
                   Enter to send
                 </div>
               </div>
-              <Button
-                onClick={handleSendMessage}
-                disabled={!newMessage.trim() || isSending}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-sm"
-              >
+                             <Button
+                 onClick={(e) => {
+                   e.stopPropagation()
+                   handleSendMessage()
+                 }}
+                 disabled={!newMessage.trim() || isSending}
+                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-sm"
+               >
                 {isSending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (

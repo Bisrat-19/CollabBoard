@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Bell, Clock, Users, MessageCircle, Calendar, CheckCircle, UserCheck } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
+import { socketService } from "@/services/socket-service"
 import type { Notification } from "@/types"
 import { useToast } from "@/hooks/use-toast"
 import { getApiUrl } from "@/lib/config"
@@ -17,6 +18,44 @@ export function NotificationsDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  // Initialize Socket.IO connection for real-time notifications
+  useEffect(() => {
+    if (user) {
+      socketService.connect();
+      socketService.joinUserNotifications(user.id || user._id);
+      
+      // Set up real-time notification listeners
+      socketService.onNewNotification((notification) => {
+        setNotifications(prev => [notification, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        
+        // Show toast for new notifications
+        toast({
+          title: "New Notification",
+          description: notification.message,
+        });
+      });
+
+      socketService.onNotificationUpdated((updatedNotification) => {
+        setNotifications(prev => 
+          prev.map(n => n._id === updatedNotification._id ? updatedNotification : n)
+        );
+      });
+
+      socketService.onNotificationDeleted((notificationId) => {
+        setNotifications(prev => prev.filter(n => n._id !== notificationId));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      });
+
+      return () => {
+        // Clean up event listeners
+        socketService.offNewNotification();
+        socketService.offNotificationUpdated();
+        socketService.offNotificationDeleted();
+      };
+    }
+  }, [user, toast]);
 
   const fetchNotificationCount = async () => {
     if (!user) return;
@@ -61,9 +100,7 @@ export function NotificationsDropdown() {
   useEffect(() => {
     if (user) {
       fetchNotificationCount();
-      // Set up polling for real-time updates
-      const interval = setInterval(fetchNotificationCount, 10000); // Poll every 10 seconds
-      return () => clearInterval(interval);
+      // Remove polling since we now have real-time updates
     }
   }, [user]);
 
@@ -153,7 +190,7 @@ export function NotificationsDropdown() {
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(getApiUrl(`/notifications/${notificationId}/read`), {
-        method: "POST",
+        method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include",
       });
@@ -192,9 +229,25 @@ export function NotificationsDropdown() {
         <div className="p-3 sm:p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Notifications</h3>
-            <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
-              {unreadCount} new
-            </Badge>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-6 px-2"
+                  onClick={() => {
+                    notifications
+                      .filter(n => !n.read)
+                      .forEach(n => handleMarkAsRead(n._id));
+                  }}
+                >
+                  Mark all read
+                </Button>
+              )}
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
+                {unreadCount} new
+              </Badge>
+            </div>
           </div>
         </div>
 
@@ -215,7 +268,7 @@ export function NotificationsDropdown() {
                     !notification.read ? "bg-blue-50/50" : ""
                   }`}
                   onClick={() => {
-                    if (notification.type === 'task-assignment' && !notification.read) {
+                    if (!notification.read) {
                       handleMarkAsRead(notification._id);
                     }
                   }}
