@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import type { Task, User, UpdateTaskData } from "@/types"
 import { taskService } from "@/services/task-service"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, UserIcon, Calendar, Tag, MessageCircle, Clock, CheckCircle, AlertCircle, Info } from "lucide-react"
+import { Loader2, UserIcon, Calendar, Tag, MessageCircle, Clock, CheckCircle, AlertCircle, Info, Lock } from "lucide-react"
 import { TaskComments } from "./task-comments"
 
 interface TaskDialogProps {
@@ -21,12 +22,31 @@ interface TaskDialogProps {
   onOpenChange: (open: boolean) => void
   onTaskUpdated: (task: Task) => void
   projectMembers: User[]
+  project?: any // Add project prop to check creator
 }
 
-export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMembers }: TaskDialogProps) {
+export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMembers, project }: TaskDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [editedTask, setEditedTask] = useState<Task>(task)
   const { toast } = useToast()
+  const { user } = useAuth()
+
+  // Check if current user can assign tasks (project creator or admin)
+  const canAssignTasks = () => {
+    if (!user || !project) return false
+    
+    // Check if user is admin
+    if (user.role === 'admin') return true
+    
+    // Check if user is project creator
+    const currentUserId = user.id || user._id
+    const projectCreatorId = project.createdBy || project.ownerId
+    
+    return currentUserId && projectCreatorId && 
+      currentUserId.toString() === projectCreatorId.toString()
+  }
+
+  const isAuthorizedToAssign = canAssignTasks()
 
   // Update editedTask when task prop changes
   useEffect(() => {
@@ -96,20 +116,15 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
   }
 
   const handleCommentAdded = (updatedTask: Task) => {
-    // Convert backend status to frontend format if needed
-    const reverseStatusMap: Record<string, "todo" | "in-progress" | "done"> = {
-      "To Do": "todo",
-      "In Progress": "in-progress",
-      "Done": "done"
+    // Preserve the current edited task state and only update comments
+    const taskWithPreservedState: Task = {
+      ...editedTask, // Keep current state (status, priority, etc.)
+      comments: updatedTask.comments, // Only update comments
+      updatedAt: updatedTask.updatedAt, // Update timestamp
     };
     
-    const taskWithFrontendStatus: Task = {
-      ...updatedTask,
-      status: reverseStatusMap[updatedTask.status] || "todo"
-    };
-    
-    setEditedTask(taskWithFrontendStatus)
-    onTaskUpdated(taskWithFrontendStatus)
+    setEditedTask(taskWithPreservedState)
+    onTaskUpdated(taskWithPreservedState)
   }
 
   const getPriorityColor = (priority: string) => {
@@ -303,69 +318,110 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
 
               {/* Assigned To */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium text-gray-700">Assigned To</Label>
-                <Select
-                  value={editedTask.assignedTo?.id || "unassigned"}
-                  onValueChange={(value) => {
-                    if (value === "unassigned") {
-                      setEditedTask((prev) => ({ ...prev, assignedTo: undefined }))
-                    } else {
-                      const member = projectMembers.find((m) => m.id === value)
-                      setEditedTask((prev) => ({ ...prev, assignedTo: member }))
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full border-2 focus:border-blue-500 focus:ring-blue-500">
-                    <SelectValue placeholder="Select assignee">
-                      {editedTask.assignedTo ? (
+                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <UserIcon className="h-4 w-4" />
+                  Assigned To
+                  {!isAuthorizedToAssign && (
+                    <Lock className="h-4 w-4 text-gray-400" />
+                  )}
+                </Label>
+                
+                {isAuthorizedToAssign ? (
+                  <Select
+                    value={editedTask.assignedTo?.id || "unassigned"}
+                    onValueChange={(value) => {
+                      if (value === "unassigned") {
+                        setEditedTask((prev) => ({ ...prev, assignedTo: undefined }))
+                      } else {
+                        const member = projectMembers.find((m) => m.id === value)
+                        setEditedTask((prev) => ({ ...prev, assignedTo: member }))
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full border-2 focus:border-blue-500 focus:ring-blue-500">
+                      <SelectValue placeholder="Select assignee">
+                        {editedTask.assignedTo ? (
+                          <div className="flex items-center">
+                            <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
+                              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
+                                {editedTask.assignedTo.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm truncate">{editedTask.assignedTo.name}</div>
+                              <div className="text-xs text-gray-500 truncate">{editedTask.assignedTo.email}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-gray-500">
+                            <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
+                              <UserIcon className="h-3 w-3" />
+                            </div>
+                            <span className="text-sm">Unassigned</span>
+                          </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem key="unassigned" value="unassigned">
                         <div className="flex items-center">
-                          <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
+                          <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
+                            <UserIcon className="h-3 w-3 text-gray-500" />
+                          </div>
+                          <span className="text-sm">Unassigned</span>
+                        </div>
+                      </SelectItem>
+                      {projectMembers.map((member, idx) => (
+                        <SelectItem key={member.id || `member-${idx}`} value={member.id}>
+                          <div className="flex items-center">
+                            <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
+                              <AvatarImage src={member.avatar || "/placeholder.svg"} />
+                              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs">
+                                {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm truncate">{member.name}</div>
+                              <div className="text-xs text-gray-500 truncate">{member.email}</div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      {editedTask.assignedTo ? (
+                        <>
+                          <Avatar className="h-8 w-8">
                             <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-semibold">
                               {editedTask.assignedTo.name.charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="min-w-0">
-                            <div className="font-medium text-sm truncate">{editedTask.assignedTo.name}</div>
-                            <div className="text-xs text-gray-500 truncate">{editedTask.assignedTo.email}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-sm text-gray-900">{editedTask.assignedTo.name}</div>
+                            <div className="text-xs text-gray-500">{editedTask.assignedTo.email}</div>
                           </div>
-                        </div>
+                        </>
                       ) : (
-                        <div className="flex items-center text-gray-500">
-                          <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
-                            <UserIcon className="h-3 w-3" />
+                        <>
+                          <div className="h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center">
+                            <UserIcon className="h-4 w-4 text-gray-500" />
                           </div>
-                          <span className="text-sm">Unassigned</span>
-                        </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-sm text-gray-900">Unassigned</div>
+                            <div className="text-xs text-gray-500">No one assigned to this task</div>
+                          </div>
+                        </>
                       )}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem key="unassigned" value="unassigned">
-                      <div className="flex items-center">
-                        <div className="h-5 w-5 sm:h-6 sm:w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
-                          <UserIcon className="h-3 w-3 text-gray-500" />
-                        </div>
-                        <span className="text-sm">Unassigned</span>
-                      </div>
-                    </SelectItem>
-                    {projectMembers.map((member, idx) => (
-                      <SelectItem key={member.id || `member-${idx}`} value={member.id}>
-                        <div className="flex items-center">
-                          <Avatar className="h-5 w-5 sm:h-6 sm:w-6 mr-2">
-                            <AvatarImage src={member.avatar || "/placeholder.svg"} />
-                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs">
-                              {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <div className="font-medium text-sm truncate">{member.name}</div>
-                            <div className="text-xs text-gray-500 truncate">{member.email}</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    </div>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <Lock className="h-3 w-3" />
+                      Only project creators and admins can assign team members to tasks
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Due Date */}

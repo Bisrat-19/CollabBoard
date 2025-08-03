@@ -80,9 +80,26 @@ export interface UpdateTaskData extends Partial<CreateTaskData> {
 export interface Notification {
   _id: string;
   userId: string;
-  type: string; // e.g., 'project-invite'
+  type: string; // e.g., 'project-invite', 'task-assignment'
   message: string;
-  data?: { projectId?: string; inviterName?: string };
+  data?: { 
+    projectId?: string; 
+    inviterName?: string;
+    taskId?: string;
+    assignerName?: string;
+    taskTitle?: string;
+    projectName?: string;
+  };
   read: boolean;
   createdAt: string;
+}
+
+export interface Message {
+  _id: string;
+  projectId: string;
+  sender: User;
+  content: string;
+  messageType: 'text' | 'system';
+  createdAt: string;
+  updatedAt: string;
 }

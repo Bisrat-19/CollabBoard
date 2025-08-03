@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import type { Task, User, CreateTaskData } from "@/types"
 import { taskService } from "@/services/task-service"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, UserIcon, Calendar, Tag, AlertCircle, Plus, Target, Clock, UserCheck, Sparkles } from "lucide-react"
+import { Loader2, UserIcon, Calendar, Tag, AlertCircle, Plus, Target, Clock, UserCheck, Sparkles, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface CreateTaskDialogProps {
@@ -30,6 +31,7 @@ interface CreateTaskDialogProps {
   projectId: string
   columnId: string
   projectMembers: User[]
+  project?: any // Add project prop to check creator
 }
 
 export function CreateTaskDialog({
@@ -39,16 +41,36 @@ export function CreateTaskDialog({
   projectId,
   columnId,
   projectMembers,
+  project,
 }: CreateTaskDialogProps) {
   const { toast } = useToast()
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<CreateTaskData>({
     title: "",
     description: "",
     priority: "medium",
-    labels: [],
     assignedToId: "unassigned",
+    dueDate: undefined,
+    labels: [],
   })
+
+  // Check if current user can assign tasks (project creator or admin)
+  const canAssignTasks = () => {
+    if (!user || !project) return false
+    
+    // Check if user is admin
+    if (user.role === 'admin') return true
+    
+    // Check if user is project creator
+    const currentUserId = user.id || user._id
+    const projectCreatorId = project.createdBy || project.ownerId
+    
+    return currentUserId && projectCreatorId && 
+      currentUserId.toString() === projectCreatorId.toString()
+  }
+
+  const isAuthorizedToAssign = canAssignTasks()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -191,58 +213,80 @@ export function CreateTaskDialog({
                 <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <UserCheck className="h-4 w-4 text-blue-600" />
                   Assign To
+                  {!isAuthorizedToAssign && (
+                    <Lock className="h-4 w-4 text-gray-400" />
+                  )}
                 </Label>
-                <Select
-                  value={formData.assignedToId}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, assignedToId: value }))}
-                >
-                  <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200">
-                    <SelectValue placeholder="Select team member">
-                      {formData.assignedToId && formData.assignedToId !== "unassigned" && (
-                        <div className="flex items-center">
-                          {(() => {
-                            const member = projectMembers.find((m) => m.id === formData.assignedToId)
-                            return member ? (
-                              <>
-                                <Avatar className="h-6 w-6 mr-2">
-                                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-xs font-semibold">
-                                    {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="text-sm truncate">{member.name}</span>
-                              </>
-                            ) : null
-                          })()}
-                        </div>
-                      )}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem key="unassigned" value="unassigned">
-                      <div className="flex items-center">
-                        <div className="h-6 w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
-                          <UserIcon className="h-3 w-3 text-gray-500" />
-                        </div>
-                        <span className="text-sm">Unassigned</span>
-                      </div>
-                    </SelectItem>
-                    {projectMembers.map((member, idx) => (
-                      <SelectItem key={member.id || `member-${idx}`} value={member.id}>
-                        <div className="flex items-center">
-                          <Avatar className="h-6 w-6 mr-2">
-                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-xs font-semibold">
-                              {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <div className="font-medium text-sm truncate">{member.name}</div>
-                            <div className="text-xs text-gray-500 truncate">{member.email}</div>
+                
+                {isAuthorizedToAssign ? (
+                  <Select
+                    value={formData.assignedToId}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, assignedToId: value }))}
+                  >
+                    <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200">
+                      <SelectValue placeholder="Select team member">
+                        {formData.assignedToId && formData.assignedToId !== "unassigned" && (
+                          <div className="flex items-center">
+                            {(() => {
+                              const member = projectMembers.find((m) => m.id === formData.assignedToId)
+                              return member ? (
+                                <>
+                                  <Avatar className="h-6 w-6 mr-2">
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-xs font-semibold">
+                                      {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-sm truncate">{member.name}</span>
+                                </>
+                              ) : null
+                            })()}
                           </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem key="unassigned" value="unassigned">
+                        <div className="flex items-center">
+                          <div className="h-6 w-6 mr-2 bg-gray-200 rounded-full flex items-center justify-center">
+                            <UserIcon className="h-3 w-3 text-gray-500" />
+                          </div>
+                          <span className="text-sm">Unassigned</span>
                         </div>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      {projectMembers.map((member, idx) => (
+                        <SelectItem key={member.id || `member-${idx}`} value={member.id}>
+                          <div className="flex items-center">
+                            <Avatar className="h-6 w-6 mr-2">
+                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-xs font-semibold">
+                                {member?.name?.charAt(0)?.toUpperCase() ?? "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm truncate">{member.name}</div>
+                              <div className="text-xs text-gray-500 truncate">{member.email}</div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <UserIcon className="h-4 w-4 text-gray-500" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm text-gray-900">Unassigned</div>
+                        <div className="text-xs text-gray-500">Task will be created without assignment</div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <Lock className="h-3 w-3" />
+                      Only project creators and admins can assign team members to tasks
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

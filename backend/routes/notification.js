@@ -99,4 +99,22 @@ router.post('/:id/decline', protect, async (req, res) => {
   }
 });
 
+// Mark notification as read
+router.post('/:id/read', protect, async (req, res) => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (!notification || notification.userId.toString() !== req.user._id.toString()) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+    
+    notification.read = true;
+    await notification.save();
+    
+    return res.json({ message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('Mark notification as read error:', error);
+    res.status(500).json({ message: 'Failed to mark notification as read' });
+  }
+});
+
 module.exports = router; 

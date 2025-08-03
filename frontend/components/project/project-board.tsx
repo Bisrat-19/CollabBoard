@@ -3,17 +3,19 @@
 import { useState, useEffect } from "react"
 import type { Project, Board, Task } from "@/types"
 import { taskService } from "@/services/task-service"
+import { messageService } from "@/services/message-service"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowLeft, Users, Settings, Loader2, Plus, Calendar, TrendingUp, Clock, Menu } from "lucide-react"
+import { ArrowLeft, Users, Settings, Loader2, Plus, Calendar, TrendingUp, Clock, Menu, MessageCircle } from "lucide-react"
 import { TaskColumn } from "./task-column"
 import { TaskDialog } from "./task-dialog"
 import { CreateTaskDialog } from "./create-task-dialog"
 import { ManageMembersDialog } from "./manage-members-dialog"
 import { ProjectSettingsDialog } from "./project-settings-dialog"
+import { ProjectChat } from "./project-chat"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface ProjectBoardProps {
@@ -37,6 +39,8 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
   const [showCreateTask, setShowCreateTask] = useState(false)
   const [showMembersDialog, setShowMembersDialog] = useState(false)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
+  const [showChat, setShowChat] = useState(false)
+  const [unseenMessageCount, setUnseenMessageCount] = useState(0)
   const [createTaskColumn, setCreateTaskColumn] = useState<string>("")
   const [currentProject, setCurrentProject] = useState<Project>(project)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -64,6 +68,33 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
       loadBoard();
     }
   }, [project?.id]);
+
+  // Poll for new messages when chat is not open
+  useEffect(() => {
+    if (!showChat && project?.id) {
+      const checkForNewMessages = async () => {
+        try {
+          const messages = await messageService.getProjectMessages(project.id)
+          const currentUserId = user?.id || user?._id
+          const unseenMessages = messages.filter(message => {
+            const senderId = message.sender.id || message.sender._id
+            return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
+          })
+          setUnseenMessageCount(unseenMessages.length)
+        } catch (error) {
+          console.error('Failed to check for new messages:', error)
+        }
+      }
+
+      // Check immediately
+      checkForNewMessages()
+
+      // Set up polling every 30 seconds
+      const interval = setInterval(checkForNewMessages, 30000)
+
+      return () => clearInterval(interval)
+    }
+  }, [showChat, project?.id, user?.id, user?._id])
   
   const loadBoard = async () => {
     if (!project || !project.id) return;
@@ -162,6 +193,10 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
     onProjectDeleted?.()
   }
 
+  const handleMessageCountChange = (count: number) => {
+    setUnseenMessageCount(count)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -232,6 +267,18 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowChat(true)} className="relative">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Discussion
+                    {unseenMessageCount > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="ml-auto h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500 hover:bg-red-500"
+                      >
+                        {unseenMessageCount > 99 ? '99+' : unseenMessageCount}
+                      </Badge>
+                    )}
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowMembersDialog(true)}>
                     <Users className="h-4 w-4 mr-2" />
                     Manage Members
@@ -256,7 +303,7 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
                 className="mr-4 hover:bg-purple-50 hover:text-purple-600 px-3 py-2"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
+                Dashboard
               </Button>
               <div className="flex items-center space-x-4">
                 <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center">
@@ -264,7 +311,7 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
                 </div>
                                  <div className="min-w-0">
                    <h1 className="text-xl lg:text-2xl font-bold text-gray-900 truncate">{currentProject.name}</h1>
-                   <p className="text-sm text-gray-600 mt-1 hidden lg:block">Manage tasks and track progress across different stages</p>
+                   <p className="text-sm text-gray-600 mt-1 hidden lg:block">Manage tasks and track progress</p>
                  </div>
               </div>
             </div>
@@ -291,6 +338,24 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
                   {currentProject.members.length} member{currentProject.members.length !== 1 ? "s" : ""}
                 </Badge>
               </div>
+
+              {/* Chat Button */}
+              <Button
+                variant="outline"
+                onClick={() => setShowChat(true)}
+                className="hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200 bg-transparent relative"
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                <span className="hidden lg:inline">Discussion</span>
+                {unseenMessageCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500 hover:bg-red-500"
+                  >
+                    {unseenMessageCount > 99 ? '99+' : unseenMessageCount}
+                  </Badge>
+                )}
+              </Button>
 
               {/* Project Actions */}
               <DropdownMenu>
@@ -419,6 +484,7 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
           onOpenChange={(open) => !open && setSelectedTask(null)}
           onTaskUpdated={handleTaskUpdated}
           projectMembers={currentProject.members}
+          project={currentProject}
         />
       )}
 
@@ -430,6 +496,7 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
         projectId={currentProject.id}
         columnId={createTaskColumn}
         projectMembers={currentProject.members}
+        project={currentProject}
       />
 
       {/* Manage Members Dialog */}
@@ -441,14 +508,22 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
         currentUser={user || undefined}
       />
 
-      {/* Project Settings Dialog */}
-      <ProjectSettingsDialog
-        isOpen={showSettingsDialog}
-        onClose={() => setShowSettingsDialog(false)}
-        project={currentProject}
-        onProjectUpdated={handleProjectUpdated}
-        onProjectDeleted={handleProjectDeleted}
-      />
-    </div>
-  )
-}
+             {/* Project Settings Dialog */}
+       <ProjectSettingsDialog
+         isOpen={showSettingsDialog}
+         onClose={() => setShowSettingsDialog(false)}
+         project={currentProject}
+         onProjectUpdated={handleProjectUpdated}
+         onProjectDeleted={handleProjectDeleted}
+       />
+
+       {/* Project Chat */}
+       <ProjectChat
+         project={currentProject}
+         isOpen={showChat}
+         onClose={() => setShowChat(false)}
+         onMessageCountChange={handleMessageCountChange}
+       />
+     </div>
+   )
+ }

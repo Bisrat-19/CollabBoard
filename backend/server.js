@@ -12,6 +12,7 @@ const taskRoutes = require('./routes/task');
 const adminRoutes = require('./routes/admin');
 const userRoutes = require('./routes/user');
 const notificationRoutes = require('./routes/notification');
+const messageRoutes = require('./routes/message');
 
 const app = express();
 app.use(cors({
@@ -29,6 +30,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/messages', messageRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

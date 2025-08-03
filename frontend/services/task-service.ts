@@ -120,8 +120,12 @@ export const taskService = {
       ...data,
       status,
     };
-    if (data.assignedToId && data.assignedToId !== "unassigned") {
-      payload.assignedTo = data.assignedToId;
+    if (data.assignedToId) {
+      if (data.assignedToId === "unassigned") {
+        payload.assignedTo = "unassigned"; // Send "unassigned" for backend validation
+      } else {
+        payload.assignedTo = data.assignedToId;
+      }
     }
     delete payload.assignedToId;
     

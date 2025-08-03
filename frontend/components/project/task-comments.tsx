@@ -44,6 +44,7 @@ export function TaskComments({ task, onCommentAdded }: TaskCommentsProps) {
       // Backend returns the full comments array
       const comments = await taskService.addComment(task.id, newComment, user.id);
 
+      // Preserve all current task properties and only update comments
       const updatedTask = {
         ...task,
         comments, // replace with full array

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Bell, Clock, Users, MessageCircle, Calendar, CheckCircle } from "lucide-react"
+import { Bell, Clock, Users, MessageCircle, Calendar, CheckCircle, UserCheck } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import type { Notification } from "@/types"
 import { useToast } from "@/hooks/use-toast"
@@ -149,6 +149,26 @@ export function NotificationsDropdown() {
     }
   };
 
+  const handleMarkAsRead = async (notificationId: string) => {
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(getApiUrl(`/notifications/${notificationId}/read`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      });
+      if (res.ok) {
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
+        );
+        // Update count
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+  };
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
@@ -194,10 +214,23 @@ export function NotificationsDropdown() {
                   className={`p-3 sm:p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
                     !notification.read ? "bg-blue-50/50" : ""
                   }`}
+                  onClick={() => {
+                    if (notification.type === 'task-assignment' && !notification.read) {
+                      handleMarkAsRead(notification._id);
+                    }
+                  }}
                 >
                   <div className="flex items-start space-x-3">
-                    <div className={`p-1.5 sm:p-2 rounded-full bg-purple-100 text-purple-600`}>
-                      <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <div className={`p-1.5 sm:p-2 rounded-full ${
+                      notification.type === 'task-assignment' 
+                        ? 'bg-blue-100 text-blue-600' 
+                        : 'bg-purple-100 text-purple-600'
+                    }`}>
+                      {notification.type === 'task-assignment' ? (
+                        <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
+                      ) : (
+                        <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
@@ -230,6 +263,25 @@ export function NotificationsDropdown() {
                             onClick={() => handleDecline(notification._id)}
                           >
                             Decline
+                          </Button>
+                        </div>
+                      )}
+                      {notification.type === "task-assignment" && !notification.read && (
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            className="bg-blue-500 hover:bg-blue-600 text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkAsRead(notification._id);
+                              // TODO: Navigate to the task when we have routing set up
+                              toast({ 
+                                title: "Task Assignment", 
+                                description: "You can view your assigned tasks in the project board." 
+                              });
+                            }}
+                          >
+                            View Task
                           </Button>
                         </div>
                       )}
