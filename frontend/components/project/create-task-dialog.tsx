@@ -54,6 +54,7 @@ export function CreateTaskDialog({
     dueDate: undefined,
     labels: [],
   })
+  const [labelsInput, setLabelsInput] = useState("")
 
   // Check if current user can assign tasks (project creator or admin)
   const canAssignTasks = () => {
@@ -80,14 +81,15 @@ export function CreateTaskDialog({
       const task = await taskService.createTask(projectId, columnId, formData)
       onTaskCreated(task)
 
-      // Reset form
-      setFormData({
-        title: "",
-        description: "",
-        priority: "medium",
-        labels: [],
-        assignedToId: "unassigned",
-      })
+             // Reset form
+       setFormData({
+         title: "",
+         description: "",
+         priority: "medium",
+         labels: [],
+         assignedToId: "unassigned",
+       })
+       setLabelsInput("")
 
       // Show specific message for assignment
       const assignedMember = projectMembers.find(m => m.id === formData.assignedToId);
@@ -316,21 +318,27 @@ export function CreateTaskDialog({
                 <Tag className="h-4 w-4 text-blue-600" />
                 Labels (Optional)
               </Label>
-              <Input
-                id="labels"
-                value={formData.labels.join(", ")}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    labels: e.target.value
-                      .split(",")
-                      .map((l) => l.trim())
-                      .filter(Boolean),
-                  }))
-                }
-                placeholder="Enter labels separated by commas (e.g., bug, feature, design)"
-                className="border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
-              />
+                             <Input
+                 id="labels"
+                 value={labelsInput}
+                 onChange={(e) => {
+                   const inputValue = e.target.value;
+                   setLabelsInput(inputValue);
+                   
+                   // Process labels from input
+                   const labels = inputValue
+                     .split(",")
+                     .map((l) => l.trim())
+                     .filter(Boolean);
+                   
+                   setFormData((prev) => ({
+                     ...prev,
+                     labels,
+                   }));
+                 }}
+                 placeholder="Enter labels separated by commas (e.g., bug, feature, design)"
+                 className="border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
+               />
               {formData.labels.length > 0 && (
                 <div className="flex flex-wrap gap-2 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
                   {formData.labels.map((label) => (

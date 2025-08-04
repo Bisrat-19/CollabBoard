@@ -9,12 +9,16 @@ require('./config/db');
 const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/project');
 const projectTaskRoutes = require('./routes/projectTask'); // new import
+const taskModule = require('./controllers/taskController');
 const taskRoutes = require('./routes/task');
+const setTaskSocketService = taskModule.setSocketService;
 const adminRoutes = require('./routes/admin');
-const userRoutes = require('./routes/user');
+const userModule = require('./routes/user');
+const userRoutes = userModule.router;
+const setUserSocketService = userModule.setSocketService;
 const notificationModule = require('./routes/notification');
 const notificationRoutes = notificationModule.router;
-const setSocketService = notificationModule.setSocketService;
+const setNotificationSocketService = notificationModule.setSocketService;
 const messageRoutes = require('./routes/message');
 
 // Import Socket.IO service
@@ -26,8 +30,10 @@ const httpServer = createServer(app);
 // Initialize Socket.IO service
 const socketService = new SocketService(httpServer);
 
-// Connect Socket.IO service with notification routes
-setSocketService(socketService);
+// Connect Socket.IO service with notification, user, and task routes
+setNotificationSocketService(socketService);
+setUserSocketService(socketService);
+setTaskSocketService(socketService);
 
 app.use(cors({
     origin: ['http://localhost:3000', 'https://collab-board-steel.vercel.app'],

@@ -22,31 +22,50 @@ export function NotificationsDropdown() {
   // Initialize Socket.IO connection for real-time notifications
   useEffect(() => {
     if (user) {
-      socketService.connect();
-      socketService.joinUserNotifications(user.id || user._id);
+      const setupSocket = async () => {
+        try {
+          // Ensure socket connection and wait for it to be ready
+          socketService.connect();
+          await socketService.waitForConnection();
+          
+          console.log('Socket connected, joining user notifications for:', user.id || user._id);
+          socketService.joinUserNotifications(user.id || user._id);
+          
+          // Set up real-time notification listeners
+          socketService.onNewNotification((notification) => {
+            console.log('Received real-time notification:', notification);
+            setNotifications(prev => [notification, ...prev]);
+            setUnreadCount(prev => prev + 1);
+            
+            // Show toast for new notifications
+            toast({
+              title: "New Notification",
+              description: notification.message,
+            });
+          });
+
+          socketService.onNotificationUpdated((updatedNotification) => {
+            console.log('Notification updated:', updatedNotification);
+            setNotifications(prev => 
+              prev.map(n => n._id === updatedNotification._id ? updatedNotification : n)
+            );
+          });
+
+          socketService.onNotificationDeleted((notificationId) => {
+            console.log('Notification deleted:', notificationId);
+            setNotifications(prev => prev.filter(n => n._id !== notificationId));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+          });
+
+          console.log('Socket listeners set up successfully');
+        } catch (error) {
+          console.error('Failed to set up socket connection:', error);
+          // Retry after a delay
+          setTimeout(setupSocket, 3000);
+        }
+      };
       
-      // Set up real-time notification listeners
-      socketService.onNewNotification((notification) => {
-        setNotifications(prev => [notification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        // Show toast for new notifications
-        toast({
-          title: "New Notification",
-          description: notification.message,
-        });
-      });
-
-      socketService.onNotificationUpdated((updatedNotification) => {
-        setNotifications(prev => 
-          prev.map(n => n._id === updatedNotification._id ? updatedNotification : n)
-        );
-      });
-
-      socketService.onNotificationDeleted((notificationId) => {
-        setNotifications(prev => prev.filter(n => n._id !== notificationId));
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      });
+      setupSocket();
 
       return () => {
         // Clean up event listeners
@@ -100,7 +119,14 @@ export function NotificationsDropdown() {
   useEffect(() => {
     if (user) {
       fetchNotificationCount();
-      // Remove polling since we now have real-time updates
+      fetchNotifications(); // Also fetch notifications on mount
+      
+      // Set up periodic refresh as fallback (every 30 seconds)
+      const interval = setInterval(() => {
+        fetchNotificationCount();
+      }, 30000);
+      
+      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -274,17 +300,25 @@ export function NotificationsDropdown() {
                   }}
                 >
                   <div className="flex items-start space-x-3">
-                    <div className={`p-1.5 sm:p-2 rounded-full ${
-                      notification.type === 'task-assignment' 
-                        ? 'bg-blue-100 text-blue-600' 
-                        : 'bg-purple-100 text-purple-600'
-                    }`}>
-                      {notification.type === 'task-assignment' ? (
-                        <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
-                      ) : (
-                        <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
-                      )}
-                    </div>
+                                         <div className={`p-1.5 sm:p-2 rounded-full ${
+                       notification.type === 'task-assignment' 
+                         ? 'bg-blue-100 text-blue-600' 
+                         : notification.type === 'task-comment'
+                         ? 'bg-green-100 text-green-600'
+                         : notification.type === 'task-completed'
+                         ? 'bg-yellow-100 text-yellow-600'
+                         : 'bg-purple-100 text-purple-600'
+                     }`}>
+                       {notification.type === 'task-assignment' ? (
+                         <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
+                       ) : notification.type === 'task-comment' ? (
+                         <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                       ) : notification.type === 'task-completed' ? (
+                         <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                       ) : (
+                         <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+                       )}
+                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p
@@ -319,25 +353,61 @@ export function NotificationsDropdown() {
                           </Button>
                         </div>
                       )}
-                      {notification.type === "task-assignment" && !notification.read && (
-                        <div className="flex gap-2 mt-2">
-                          <Button
-                            size="sm"
-                            className="bg-blue-500 hover:bg-blue-600 text-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMarkAsRead(notification._id);
-                              // TODO: Navigate to the task when we have routing set up
-                              toast({ 
-                                title: "Task Assignment", 
-                                description: "You can view your assigned tasks in the project board." 
-                              });
-                            }}
-                          >
-                            View Task
-                          </Button>
-                        </div>
-                      )}
+                                             {notification.type === "task-assignment" && !notification.read && (
+                         <div className="flex gap-2 mt-2">
+                           <Button
+                             size="sm"
+                             className="bg-blue-500 hover:bg-blue-600 text-white"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               handleMarkAsRead(notification._id);
+                               // TODO: Navigate to the task when we have routing set up
+                               toast({ 
+                                 title: "Task Assignment", 
+                                 description: "You can view your assigned tasks in the project board." 
+                               });
+                             }}
+                           >
+                             View Task
+                           </Button>
+                         </div>
+                       )}
+                       {notification.type === "task-comment" && !notification.read && (
+                         <div className="flex gap-2 mt-2">
+                           <Button
+                             size="sm"
+                             className="bg-green-500 hover:bg-green-600 text-white"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               handleMarkAsRead(notification._id);
+                               toast({ 
+                                 title: "Task Comment", 
+                                 description: "You can view the comment in the project board." 
+                               });
+                             }}
+                           >
+                             View Comment
+                           </Button>
+                         </div>
+                       )}
+                       {notification.type === "task-completed" && !notification.read && (
+                         <div className="flex gap-2 mt-2">
+                           <Button
+                             size="sm"
+                             className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               handleMarkAsRead(notification._id);
+                               toast({ 
+                                 title: "Task Completed", 
+                                 description: "Great job! Your task has been completed." 
+                               });
+                             }}
+                           >
+                             View Task
+                           </Button>
+                         </div>
+                       )}
                       <p className="text-xs text-gray-500 mt-1 sm:mt-2">
                         {new Date(notification.createdAt).toLocaleString()}
                       </p>

@@ -46,7 +46,6 @@ const createNotification = async (req, res) => {
     
     const savedNotification = await notification.save();
     
-    // Send real-time notification if socket service is available
     if (socketService) {
       socketService.sendNotificationToUser(userId, savedNotification);
     }

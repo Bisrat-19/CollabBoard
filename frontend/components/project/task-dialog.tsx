@@ -28,6 +28,7 @@ interface TaskDialogProps {
 export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMembers, project }: TaskDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [editedTask, setEditedTask] = useState<Task>(task)
+  const [labelsInput, setLabelsInput] = useState("")
   const { toast } = useToast()
   const { user } = useAuth()
 
@@ -52,6 +53,7 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
   useEffect(() => {
     if (task) {
       setEditedTask(task)
+      setLabelsInput(task.labels.join(", "))
     }
   }, [task])
 
@@ -202,21 +204,27 @@ export function TaskDialog({ task, open, onOpenChange, onTaskUpdated, projectMem
                   <Tag className="h-4 w-4" />
                   Labels
                 </Label>
-                <Input
-                  id="labels"
-                  value={editedTask.labels.join(", ")}
-                  onChange={(e) =>
-                    setEditedTask((prev) => ({
-                      ...prev,
-                      labels: e.target.value
-                        .split(",")
-                        .map((l) => l.trim())
-                        .filter(Boolean),
-                    }))
-                  }
-                  placeholder="Enter labels separated by commas"
-                  className="border-2 focus:border-blue-500 focus:ring-blue-500"
-                />
+                                 <Input
+                   id="labels"
+                   value={labelsInput}
+                   onChange={(e) => {
+                     const inputValue = e.target.value;
+                     setLabelsInput(inputValue);
+                     
+                     // Process labels from input
+                     const labels = inputValue
+                       .split(",")
+                       .map((l) => l.trim())
+                       .filter(Boolean);
+                     
+                     setEditedTask((prev) => ({
+                       ...prev,
+                       labels,
+                     }));
+                   }}
+                   placeholder="Enter labels separated by commas"
+                   className="border-2 focus:border-blue-500 focus:ring-blue-500"
+                 />
                 <div className="flex flex-wrap gap-2">
                   {editedTask.labels.map((label) => (
                     <Badge key={label} variant="secondary" className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-medium px-3 py-1">

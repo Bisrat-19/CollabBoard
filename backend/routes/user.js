@@ -5,6 +5,12 @@ const Notification = require('../models/Notification');
 const Project = require('../models/Project');
 const { protect } = require('../middlewares/authMiddleware');
 
+// Socket service reference
+let socketService;
+const setSocketService = (service) => {
+  socketService = service;
+};
+
 // Get all users
 router.get('/', async (req, res) => {
   try {
@@ -61,7 +67,16 @@ router.post('/invite', protect, async (req, res) => {
   });
   console.log('Notification created for user:', user.email, 'project:', project.name, 'notificationId:', notification._id);
 
+  // Send real-time notification
+  if (socketService) {
+    console.log('Sending real-time notification to user ID:', user._id.toString());
+    socketService.sendNotificationToUser(user._id.toString(), notification);
+    console.log('Real-time notification sent to user:', user.email);
+  } else {
+    console.log('Socket service not available for real-time notification');
+  }
+
   res.json({ message: 'Invitation sent' });
 });
 
-module.exports = router;
+module.exports = { router, setSocketService };

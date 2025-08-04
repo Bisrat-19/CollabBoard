@@ -30,8 +30,13 @@ class SocketService {
 
       // Join user's personal notification room
       socket.on('join-user-notifications', (userId) => {
-        socket.join(`user-${userId}`);
-        console.log(`User ${socket.id} joined notification room for user ${userId}`);
+        const roomName = `user-${userId}`;
+        socket.join(roomName);
+        console.log(`User ${socket.id} joined notification room: ${roomName}`);
+        
+        // Log the rooms this socket is in
+        const rooms = Array.from(socket.rooms);
+        console.log(`Socket ${socket.id} is now in rooms:`, rooms);
       });
 
       // Handle new message
@@ -110,7 +115,9 @@ class SocketService {
 
   // Helper methods for sending notifications
   sendNotificationToUser(userId, notification) {
+    console.log(`Attempting to send notification to user room: user-${userId}`);
     this.io.to(`user-${userId}`).emit('new-notification', notification);
+    console.log(`Notification emitted to room user-${userId}`);
   }
 
   sendNotificationToProject(projectId, notification, targetUsers = []) {

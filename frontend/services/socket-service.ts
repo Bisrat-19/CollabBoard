@@ -225,7 +225,35 @@ class SocketService {
   }
 
   getConnectionStatus() {
-    return this.isConnected;
+    return this.isConnected && this.socket?.connected;
+  }
+
+  // Wait for connection to be established
+  waitForConnection(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.isConnected && this.socket?.connected) {
+        resolve();
+        return;
+      }
+
+      if (!this.socket) {
+        this.connect();
+      }
+
+      const timeout = setTimeout(() => {
+        reject(new Error('Connection timeout'));
+      }, 5000);
+
+      this.socket?.once('connect', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+
+      this.socket?.once('connect_error', (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      });
+    });
   }
 }
 

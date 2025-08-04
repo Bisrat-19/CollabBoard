@@ -1,8 +1,14 @@
 const Task = require('../models/Task');
 const Notification = require('../models/Notification');
 
+// Socket service reference
+let socketService;
+const setSocketService = (service) => {
+  socketService = service;
+};
+
 // Helper function to create task assignment notification
-const createTaskAssignmentNotification = async (assignedUserId, taskId, projectId, assignerName, taskTitle, projectName) => {
+const createTaskAssignmentNotification = async (assignedUserId, taskId, projectId, assignerName, taskTitle, projectName, socketService = null) => {
   try {
     const notification = new Notification({
       userId: assignedUserId,
@@ -17,6 +23,17 @@ const createTaskAssignmentNotification = async (assignedUserId, taskId, projectI
       }
     });
     await notification.save();
+    
+    // Send real-time notification if socket service is available
+    if (socketService) {
+      console.log('Sending real-time task assignment notification to user ID:', assignedUserId.toString());
+      socketService.sendNotificationToUser(assignedUserId.toString(), notification);
+      console.log('Real-time task assignment notification sent to user');
+    } else {
+      console.log('Socket service not available for real-time task assignment notification');
+    }
+    
+    return notification;
   } catch (error) {
     console.error('Failed to create task assignment notification:', error);
   }
@@ -119,7 +136,8 @@ exports.createTask = async (req, res) => {
             req.params.projectId,
             req.user.name,
             title,
-            project.name
+            project.name,
+            socketService
           );
         }
       }
@@ -158,7 +176,7 @@ exports.getTaskById = async (req, res) => {
 // Update task by ID
 exports.updateTask = async (req, res) => {
   try {
-    const { assignedTo } = req.body;
+    const { assignedTo, status } = req.body;
 
     // Check if user is trying to assign the task to someone
     if (assignedTo && assignedTo !== 'unassigned') {
@@ -225,8 +243,37 @@ exports.updateTask = async (req, res) => {
             currentTask.project.toString(),
             req.user.name,
             updatedTask.title,
-            project.name
+            project.name,
+            socketService
           );
+        }
+      }
+    }
+
+    // Send notification if task status changed to completed
+    if (status === 'completed' && currentTask.status !== 'completed' && currentTask.assignedTo) {
+      const Project = require('../models/Project');
+      const project = await Project.findById(currentTask.project);
+      if (project) {
+        const notification = new Notification({
+          userId: currentTask.assignedTo,
+          type: 'task-completed',
+          message: `Your task "${currentTask.title}" in project "${project.name}" has been marked as completed by ${req.user.name}`,
+          data: {
+            taskId: currentTask._id,
+            projectId: currentTask.project,
+            completedBy: req.user.name,
+            taskTitle: currentTask.title,
+            projectName: project.name
+          }
+        });
+        await notification.save();
+        
+        // Send real-time notification
+        if (socketService) {
+          console.log('Sending real-time task completion notification to user ID:', currentTask.assignedTo.toString());
+          socketService.sendNotificationToUser(currentTask.assignedTo.toString(), notification);
+          console.log('Real-time task completion notification sent to user');
         }
       }
     }
@@ -277,6 +324,35 @@ exports.addComment = async (req, res) => {
       select: "name email role avatar createdAt",
     });
 
+    // Send notification to task assignee if comment is from someone else
+    if (task.assignedTo && task.assignedTo.toString() !== req.user._id.toString()) {
+      const Project = require('../models/Project');
+      const project = await Project.findById(task.project);
+      if (project) {
+        const notification = new Notification({
+          userId: task.assignedTo,
+          type: 'task-comment',
+          message: `${req.user.name} commented on your task "${task.title}" in project "${project.name}"`,
+          data: {
+            taskId: task._id,
+            projectId: task.project,
+            commenterName: req.user.name,
+            taskTitle: task.title,
+            projectName: project.name,
+            commentContent: content.trim()
+          }
+        });
+        await notification.save();
+        
+        // Send real-time notification
+        if (socketService) {
+          console.log('Sending real-time task comment notification to user ID:', task.assignedTo.toString());
+          socketService.sendNotificationToUser(task.assignedTo.toString(), notification);
+          console.log('Real-time task comment notification sent to user');
+        }
+      }
+    }
+
     res.status(201).json(task.comments);
   } catch (err) {
     console.error("AddComment error:", err);
@@ -311,5 +387,8 @@ exports.deleteComment = async (req, res) => {
     res.status(500).json({ message: 'Failed to delete comment' });
   }
 };
+
+// Export setSocketService function
+exports.setSocketService = setSocketService;
 
 
