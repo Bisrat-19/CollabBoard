@@ -25,24 +25,20 @@ router.get('/', async (req, res) => {
 router.post('/invite', protect, async (req, res) => {
   const { email, projectId } = req.body;
   if (!email || !projectId) {
-    console.log('Invite failed: missing email or projectId', { email, projectId });
     return res.status(400).json({ message: 'Email and projectId are required' });
   }
 
   const user = await User.findOne({ email });
   if (!user) {
-    console.log('Invite failed: user not found for email', email);
     return res.status(404).json({ message: 'User not found' });
   }
 
   const project = await Project.findById(projectId);
   if (!project) {
-    console.log('Invite failed: project not found for id', projectId);
     return res.status(404).json({ message: 'Project not found' });
   }
 
   if (project.members.some((m) => m.toString() === user._id.toString())) {
-    console.log('Invite failed: user already a member', email, project.name);
     return res.status(400).json({ message: 'User is already a project member' });
   }
 
@@ -53,7 +49,6 @@ router.post('/invite', protect, async (req, res) => {
     read: false,
   });
   if (existingInvite) {
-    console.log('Invite failed: user already has a pending invite', email, project.name);
     return res.status(400).json({ message: 'User already has a pending invitation for this project' });
   }
 
@@ -65,16 +60,10 @@ router.post('/invite', protect, async (req, res) => {
     message,
     data: { projectId, inviterName },
   });
-  console.log('Notification created for user:', user.email, 'project:', project.name, 'notificationId:', notification._id);
-
-  // Send real-time notification
-  if (socketService) {
-    console.log('Sending real-time notification to user ID:', user._id.toString());
-    socketService.sendNotificationToUser(user._id.toString(), notification);
-    console.log('Real-time notification sent to user:', user.email);
-  } else {
-    console.log('Socket service not available for real-time notification');
-  }
+      // Send real-time notification
+    if (socketService) {
+      socketService.sendNotificationToUser(user._id.toString(), notification);
+    }
 
   res.json({ message: 'Invitation sent' });
 });

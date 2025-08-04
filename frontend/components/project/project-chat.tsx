@@ -111,7 +111,6 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
      // Clear unseen count when chat is opened
    useEffect(() => {
      if (isOpen) {
-       console.log('ProjectChat: Chat opened, clearing unseen count')
        setUnseenCount(0)
        onMessageCountChange?.(0)
        
@@ -124,7 +123,6 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
          if (currentUserId) {
            const lastSeenKey = `lastSeenMessage_${project.id}_${currentUserId}`
            localStorage.setItem(lastSeenKey, lastMessage._id)
-           console.log('ProjectChat: Saved last seen message ID:', lastMessage._id)
          }
        }
      }
@@ -160,7 +158,6 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
               const lastMessage = messages[messages.length - 1]
               lastSeenMessageId.current = lastMessage._id
               localStorage.setItem(lastSeenKey, lastMessage._id)
-              console.log('ProjectChat: Initialized last seen message ID:', lastMessage._id)
             }
           }).catch(error => {
             console.error('Failed to initialize last seen message:', error)
@@ -217,7 +214,6 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
        
        // When chat is opened, all messages are considered seen
        if (isOpen) {
-         console.log('ProjectChat: Loading messages, chat is open, clearing count')
          setUnseenCount(0)
          onMessageCountChange?.(0)
          if (projectMessages.length > 0) {
@@ -229,7 +225,6 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
            if (currentUserId) {
              const lastSeenKey = `lastSeenMessage_${project.id}_${currentUserId}`
              localStorage.setItem(lastSeenKey, lastMessage._id)
-             console.log('ProjectChat: Saved last seen message ID on load:', lastMessage._id)
            }
          }
        } else {

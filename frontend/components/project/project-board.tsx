@@ -27,11 +27,6 @@ interface ProjectBoardProps {
 }
 
 export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated, onProjectDeleted }: ProjectBoardProps) {
-  console.log('ProjectBoard: Received props:', { 
-    project, 
-    hasOnProjectUpdated: !!onProjectUpdated, 
-    hasOnProjectDeleted: !!onProjectDeleted 
-  })
   const { user } = useAuth()
   const [board, setBoard] = useState<Board | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -99,7 +94,6 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
             unseenCount = 0
           }
           
-          console.log('ProjectBoard: Polling found', unseenCount, 'unseen messages')
           setUnseenMessageCount(unseenCount)
         } catch (error) {
           console.error('Failed to check for new messages:', error)
@@ -119,7 +113,6 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
   // Clear unseen count when chat is opened (separate effect to ensure it runs)
   useEffect(() => {
     if (showChat) {
-      console.log('ProjectBoard: Chat opened, clearing unseen count')
       setUnseenMessageCount(0)
     } else {
       // When chat is closed, check for new messages immediately
@@ -151,7 +144,6 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
               unseenCount = 0
             }
             
-            console.log('ProjectBoard: Chat closed, found', unseenCount, 'unseen messages')
             setUnseenMessageCount(unseenCount)
           } catch (error) {
             console.error('Failed to check for new messages:', error)
@@ -247,7 +239,6 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
   }
 
   const handleProjectUpdated = (updatedProject: Project) => {
-    console.log('ProjectBoard: handleProjectUpdated called with:', updatedProject)
     setCurrentProject(updatedProject)
     setShowSettingsDialog(false)
     // Notify parent component about the project update
@@ -255,13 +246,11 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
   }
 
   const handleProjectDeleted = () => {
-    console.log('ProjectBoard: handleProjectDeleted called')
     // Notify parent component about the project deletion
     onProjectDeleted?.()
   }
 
   const handleMessageCountChange = (count: number) => {
-    console.log('ProjectBoard: Message count changed to:', count)
     setUnseenMessageCount(count)
   }
 

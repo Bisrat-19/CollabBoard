@@ -63,14 +63,7 @@ export function ProjectSettingsDialog({
   const isCreator = currentUserId && projectCreatorId && 
     (currentUserId.toString() === projectCreatorId.toString());
 
-  // Debug logging
-  console.log('Project Settings Debug:', {
-    currentUserId,
-    projectCreatorId,
-    isCreator,
-    user: { id: user?.id, _id: user?._id },
-    project: { createdBy: project.createdBy, ownerId: project.ownerId }
-  });
+
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -91,22 +84,16 @@ export function ProjectSettingsDialog({
 
     try {
       setIsLoading(true)
-      console.log('ProjectSettingsDialog: Starting update for project:', project)
-      
       const updatedProject = await projectService.updateProject(project.id || project._id, {
         name: formData.name.trim(),
         description: formData.description.trim(),
       })
       
-      console.log('ProjectSettingsDialog: Update successful, got:', updatedProject)
       setIsEditing(false)
       
       // Test if callback exists
       if (onProjectUpdated) {
-        console.log('ProjectSettingsDialog: onProjectUpdated callback exists, calling it')
         onProjectUpdated(updatedProject)
-      } else {
-        console.log('ProjectSettingsDialog: onProjectUpdated callback is undefined!')
       }
       
       toast({
@@ -131,7 +118,6 @@ export function ProjectSettingsDialog({
       await projectService.deleteProject(project.id || project._id)
       setShowDeleteDialog(false)
       onClose()
-      console.log('ProjectSettingsDialog: calling onProjectDeleted')
       onProjectDeleted?.()
       
       toast({

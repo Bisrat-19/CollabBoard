@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
+
 import { useToast } from "@/hooks/use-toast"
 
 interface AdminPanelProps {
@@ -119,11 +119,9 @@ export function AdminPanel({ onBack, onRefresh }: AdminPanelProps) {
 
   const handleBackupSystem = () => {
     // In a real app, this would trigger a system backup
-    console.log("System backup initiated")
 
     // Simulate backup process
     setTimeout(() => {
-      console.log("System backup completed")
       toast({
         title: "Backup completed",
         description: "System backup has been completed successfully.",
@@ -462,11 +460,13 @@ export function AdminPanel({ onBack, onRefresh }: AdminPanelProps) {
                     </Label>
                     <p className="text-sm text-gray-600">Temporarily disable user access for maintenance</p>
                   </div>
-                  <Switch
+                  <input
                     id="maintenanceMode"
+                    type="checkbox"
                     checked={systemSettings.maintenanceMode}
-                    onCheckedChange={(checked) => handleSystemSettingsUpdate({ ...systemSettings, maintenanceMode: checked })}
+                    onChange={(e) => handleSystemSettingsUpdate({ ...systemSettings, maintenanceMode: e.target.checked })}
                     disabled={isUpdatingSettings}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </div>
 
@@ -477,11 +477,13 @@ export function AdminPanel({ onBack, onRefresh }: AdminPanelProps) {
                     </Label>
                     <p className="text-sm text-gray-600">Allow new users to register accounts</p>
                   </div>
-                  <Switch
+                  <input
                     id="allowRegistration"
+                    type="checkbox"
                     checked={systemSettings.allowRegistration}
-                    onCheckedChange={(checked) => handleSystemSettingsUpdate({ ...systemSettings, allowRegistration: checked })}
+                    onChange={(e) => handleSystemSettingsUpdate({ ...systemSettings, allowRegistration: e.target.checked })}
                     disabled={isUpdatingSettings}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </div>
 

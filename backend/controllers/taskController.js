@@ -26,11 +26,7 @@ const createTaskAssignmentNotification = async (assignedUserId, taskId, projectI
     
     // Send real-time notification if socket service is available
     if (socketService) {
-      console.log('Sending real-time task assignment notification to user ID:', assignedUserId.toString());
       socketService.sendNotificationToUser(assignedUserId.toString(), notification);
-      console.log('Real-time task assignment notification sent to user');
-    } else {
-      console.log('Socket service not available for real-time task assignment notification');
     }
     
     return notification;
@@ -271,9 +267,7 @@ exports.updateTask = async (req, res) => {
         
         // Send real-time notification
         if (socketService) {
-          console.log('Sending real-time task completion notification to user ID:', currentTask.assignedTo.toString());
           socketService.sendNotificationToUser(currentTask.assignedTo.toString(), notification);
-          console.log('Real-time task completion notification sent to user');
         }
       }
     }
@@ -346,9 +340,7 @@ exports.addComment = async (req, res) => {
         
         // Send real-time notification
         if (socketService) {
-          console.log('Sending real-time task comment notification to user ID:', task.assignedTo.toString());
           socketService.sendNotificationToUser(task.assignedTo.toString(), notification);
-          console.log('Real-time task comment notification sent to user');
         }
       }
     }

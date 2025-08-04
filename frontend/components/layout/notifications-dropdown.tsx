@@ -28,12 +28,13 @@ export function NotificationsDropdown() {
           socketService.connect();
           await socketService.waitForConnection();
           
-          console.log('Socket connected, joining user notifications for:', user.id || user._id);
-          socketService.joinUserNotifications(user.id || user._id);
+          const userId = user.id || user._id;
+          if (userId) {
+            socketService.joinUserNotifications(userId);
+          }
           
           // Set up real-time notification listeners
           socketService.onNewNotification((notification) => {
-            console.log('Received real-time notification:', notification);
             setNotifications(prev => [notification, ...prev]);
             setUnreadCount(prev => prev + 1);
             
@@ -45,19 +46,15 @@ export function NotificationsDropdown() {
           });
 
           socketService.onNotificationUpdated((updatedNotification) => {
-            console.log('Notification updated:', updatedNotification);
             setNotifications(prev => 
               prev.map(n => n._id === updatedNotification._id ? updatedNotification : n)
             );
           });
 
           socketService.onNotificationDeleted((notificationId) => {
-            console.log('Notification deleted:', notificationId);
             setNotifications(prev => prev.filter(n => n._id !== notificationId));
             setUnreadCount(prev => Math.max(0, prev - 1));
           });
-
-          console.log('Socket listeners set up successfully');
         } catch (error) {
           console.error('Failed to set up socket connection:', error);
           // Retry after a delay

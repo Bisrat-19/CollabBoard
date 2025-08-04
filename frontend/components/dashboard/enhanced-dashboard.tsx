@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import type { Project, Task } from "@/types"
 import { projectService } from "@/services/project-service"
 import { taskService } from "@/services/task-service"
@@ -66,10 +66,9 @@ export function EnhancedDashboard() {
     return () => window.removeEventListener("projectListShouldRefresh", handler);
   }, [])
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true)
-      console.log("Loading data...")
       
       const [projectsData, tasksData, collaboratingUsersData] = await Promise.all([
         projectService.getProjects().catch(err => {
@@ -86,10 +85,6 @@ export function EnhancedDashboard() {
         })
       ])
       
-      console.log("Projects data:", projectsData)
-      console.log("Tasks data:", tasksData)
-      console.log("Collaborating users data:", collaboratingUsersData)
-      
       // Map _id to id for all projects and normalize members
       const mappedProjects = (projectsData || []).map((p: any) => ({
         _id: p._id,
@@ -102,7 +97,7 @@ export function EnhancedDashboard() {
           _id: m._id || m.id,
         })),
         ownerId: p.ownerId,
-        createdBy: p.createdBy, // Add createdBy field from backend
+        createdBy: p.createdBy,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
       }))
@@ -113,20 +108,20 @@ export function EnhancedDashboard() {
         id: t.id || t._id,
       }))
       
-             // Sort projects by createdAt in descending order (newest first)
-       const sortedProjects = mappedProjects.sort((a, b) => 
-         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-       )
-       
-       setProjects(sortedProjects)
-       setTasks(mappedTasks)
-       setCollaboratingUsers(collaboratingUsersData || [])
+      // Sort projects by createdAt in descending order (newest first)
+      const sortedProjects = mappedProjects.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+      
+      setProjects(sortedProjects)
+      setTasks(mappedTasks)
+      setCollaboratingUsers(collaboratingUsersData || [])
     } catch (error) {
       console.error("Error loading data:", error)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   // Function to refresh data (can be called from other components)
   const refreshData = () => {
@@ -163,7 +158,7 @@ export function EnhancedDashboard() {
   }
 
   // Function to calculate project progress
-  const calculateProjectProgress = (projectId: string) => {
+  const calculateProjectProgress = useCallback((projectId: string) => {
     const projectTasks = tasks.filter(task => {
       const taskProjectId = task.project?.id || task.project?._id
       return taskProjectId === projectId || taskProjectId?.toString() === projectId?.toString()
@@ -190,18 +185,34 @@ export function EnhancedDashboard() {
 
     // Otherwise, return 60%
     return 60
-  }
+  }, [tasks])
 
   // Calculate dashboard statistics
-  const activeProjects = projects.filter(project => {
-    const projectProgress = calculateProjectProgress(project.id)
-    return projectProgress < 100
-  }).length
-  
-  const completedProjects = projects.filter(project => {
-    const projectProgress = calculateProjectProgress(project.id)
-    return projectProgress === 100
-  }).length
+  const dashboardStats = useMemo(() => {
+    const activeProjects = projects.filter(project => {
+      const projectProgress = calculateProjectProgress(project.id)
+      return projectProgress < 100
+    }).length
+    
+    const completedProjects = projects.filter(project => {
+      const projectProgress = calculateProjectProgress(project.id)
+      return projectProgress === 100
+    }).length
+
+    const totalTasks = tasks.length
+    const completedTasks = tasks.filter(task => task.status === "done").length
+    const inProgressTasks = tasks.filter(task => task.status === "in-progress").length
+    const todoTasks = tasks.filter(task => task.status === "todo").length
+
+    return {
+      activeProjects,
+      completedProjects,
+      totalTasks,
+      completedTasks,
+      inProgressTasks,
+      todoTasks
+    }
+  }, [projects, tasks, calculateProjectProgress])
 
   // Handle different views
   if (selectedProject) {
@@ -210,37 +221,28 @@ export function EnhancedDashboard() {
       onBack={() => setSelectedProject(null)} 
       onTaskUpdated={() => loadData()}
       onProjectUpdated={(updatedProject) => {
-        console.log('EnhancedDashboard: onProjectUpdated called with:', updatedProject)
         // Update the project in the dashboard's project list
         setProjects(prev => {
-          console.log('EnhancedDashboard: current projects:', prev)
           const updated = prev.map(p => {
             const pId = p.id || p._id;
             const updatedId = updatedProject.id || updatedProject._id;
-            console.log('EnhancedDashboard: comparing', pId, 'with', updatedId, 'types:', typeof pId, typeof updatedId)
             const isMatch = pId === updatedId || pId?.toString() === updatedId?.toString();
-            console.log('EnhancedDashboard: isMatch:', isMatch)
             return isMatch ? updatedProject : p;
           });
-          console.log('EnhancedDashboard: updated projects:', updated)
           return updated;
         })
         // Update the selected project
         setSelectedProject(updatedProject)
       }}
       onProjectDeleted={() => {
-        console.log('EnhancedDashboard: onProjectDeleted called')
         // Remove the project from the dashboard's project list
         const selectedId = selectedProject.id || selectedProject._id;
-        console.log('EnhancedDashboard: removing project with id:', selectedId)
         setProjects(prev => {
-          console.log('EnhancedDashboard: current projects before deletion:', prev)
           const filtered = prev.filter(p => {
             const pId = p.id || p._id;
             const isMatch = pId === selectedId || pId?.toString() === selectedId?.toString();
             return !isMatch;
           });
-          console.log('EnhancedDashboard: projects after deletion:', filtered)
           return filtered;
         })
         // Go back to dashboard
@@ -516,7 +518,7 @@ export function EnhancedDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-blue-100 text-xs lg:text-sm font-medium">Active</p>
-                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{activeProjects}</p>
+                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{dashboardStats.activeProjects}</p>
                       </div>
                       <div className="bg-white/20 p-1.5 sm:p-2 lg:p-3 rounded-xl">
                         <Clock className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6" />
@@ -530,7 +532,7 @@ export function EnhancedDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-emerald-100 text-xs lg:text-sm font-medium">Completed</p>
-                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{completedProjects}</p>
+                        <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{dashboardStats.completedProjects}</p>
                       </div>
                       <div className="bg-white/20 p-1.5 sm:p-2 lg:p-3 rounded-xl">
                         <Star className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6" />
