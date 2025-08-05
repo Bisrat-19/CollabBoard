@@ -2,11 +2,7 @@
 
 import { useEffect, useRef } from "react"
 
-/**
- * Automatically reloads the page once when Next.js split-chunk fetching fails.
- * This prevents the “Loading chunk XXX failed” white-screen problem after
- * a new deployment.
- */
+
 export function RecoverFromChunkFail() {
   const hasReloaded = useRef(false)
 
