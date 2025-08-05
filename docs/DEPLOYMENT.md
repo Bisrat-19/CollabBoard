@@ -38,7 +38,7 @@ Create the following environment files:
 #### Backend (.env)
 ```env
 # Database
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/collabboard?retryWrites=true&w=majority
+mongodb+srv://<USERNAME>:<PASSWORD>@cluster.mongodb.net/<DBNAME>?retryWrites=true&w=majority
 
 # Authentication
 JWT_SECRET=your-super-secret-jwt-key-here
@@ -106,7 +106,7 @@ NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
 
 4. **Get Connection String**
    ```
-   mongodb+srv://collabboard_user:password@cluster.mongodb.net/collabboard?retryWrites=true&w=majority
+   mongodb+srv://<USERNAME>:<PASSWORD>@cluster.mongodb.net/<DBNAME>?retryWrites=true&w=majority
    ```
 
 ### Self-Hosted MongoDB
