@@ -727,24 +727,3 @@ const createProject = async (projectData) => {
   }
 };
 ```
-
-### cURL Examples
-```bash
-# Login
-curl -X POST https://your-backend-domain.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123"}'
-
-# Get projects
-curl -X GET https://your-backend-domain.com/api/projects \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
----
-
-## Support
-
-For API support and questions:
-- **Documentation:** [API Wiki](https://github.com/Bisrat-19/CollabBoard/wiki/API)
-- **Issues:** [GitHub Issues](https://github.com/Bisrat-19/CollabBoard/issues)
-- **Email:** api-support@collabboard.com 
