@@ -16,6 +16,36 @@
 
 CollabBoard is designed to streamline team collaboration with advanced features including real-time messaging, task management, project organization, and comprehensive admin controls. The platform provides a seamless experience for teams of any size to work together effectively.
 
+### **Key Benefits**
+- **Real-time Collaboration:** Instant messaging and live updates across all features
+- **Scalable Architecture:** Built to handle teams from small startups to large enterprises
+- **Modern UI/UX:** Intuitive interface with dark/light theme support
+- **Role-based Access:** Granular permissions for different user types
+- **Mobile Responsive:** Works seamlessly across all devices
+
+---
+
+## 🏗️ Architecture Overview
+
+### **System Architecture**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend       │    │   Database      │
+│   (Next.js)     │◄──►│   (Express.js)  │◄──►│   (MongoDB)     │
+│                 │    │                 │    │                 │
+│ • React App     │    │ • REST API      │    │ • User Data     │
+│ • Socket.IO     │    │ • Socket.IO     │    │ • Projects      │
+│ • TypeScript    │    │ • JWT Auth      │    │ • Tasks         │
+│ • Tailwind CSS  │    │ • Middleware    │    │ • Messages      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### **Data Flow**
+1. **Authentication Flow:** JWT-based token management with refresh capabilities
+2. **Real-time Communication:** WebSocket connections for live updates
+3. **State Management:** React Context API for global state
+4. **API Communication:** RESTful endpoints with Axios client
+
 ---
 
 ## 🛠️ Technology Stack
@@ -46,14 +76,53 @@ CollabBoard is designed to streamline team collaboration with advanced features 
 
 ## ✨ Core Features
 
-- 🔐 **Authentication & Authorization** - JWT-based with role-based access
-- 👨‍💼 **Admin Dashboard** - User management, analytics, project oversight
-- 📁 **Project Management** - Create, organize, and manage team projects
-- ✅ **Task Management** - Kanban board with drag-and-drop functionality
-- 💬 **Real-time Chat** - Project-specific messaging with Socket.IO
-- 🔔 **Notifications** - Real-time alerts and updates
-- 📊 **Analytics** - Team insights and project metrics
-- 🎨 **Modern UI** - Responsive design with dark/light themes
+### **🔐 Authentication & Authorization**
+- JWT-based authentication with secure token storage
+- Role-based access control (User, Admin)
+- Password hashing with bcryptjs
+- Session management and token refresh
+
+### **👨‍💼 Admin Dashboard**
+- User management and analytics
+- System-wide project oversight
+- Performance metrics and insights
+- User role management
+
+### **📁 Project Management**
+- Create, organize, and manage team projects
+- Project-specific chat rooms
+- Member invitation and management
+- Project analytics and progress tracking
+
+### **✅ Task Management**
+- Kanban board with drag-and-drop functionality
+- Task assignment and status tracking
+- Priority levels and due dates
+- Task comments and attachments
+
+### **💬 Real-time Chat**
+- Project-specific messaging with Socket.IO
+- Message history and search
+- File sharing capabilities
+- Typing indicators and read receipts
+
+### **🔔 Notifications**
+- Real-time alerts and updates
+- Email notifications (configurable)
+- In-app notification center
+- Customizable notification preferences
+
+### **📊 Analytics**
+- Team insights and project metrics
+- Performance tracking
+- Usage statistics
+- Export capabilities
+
+### **🎨 Modern UI**
+- Responsive design with mobile-first approach
+- Dark/light theme support
+- Accessibility compliant
+- Modern component library
 
 ---
 
@@ -63,6 +132,7 @@ CollabBoard is designed to streamline team collaboration with advanced features 
 - Node.js 18+ 
 - MongoDB Atlas (Cloud Database)
 - npm or yarn package manager
+- Git
 
 ### **1. Clone the Repository**
 ```bash
@@ -146,53 +216,13 @@ CollabBoard/
 
 ---
 
-## 🔧 API Endpoints
+## 📚 Documentation
 
-### **Authentication**
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `GET /api/auth/me` - Get current user
+For detailed information about CollabBoard, check out our comprehensive documentation:
 
-### **Users**
-- `GET /api/users` - Get all users
-- `PUT /api/users/:id` - Update user
-- `DELETE /api/users/:id` - Delete user
-
-### **Projects**
-- `GET /api/projects` - Get user's projects
-- `POST /api/projects` - Create new project
-- `PUT /api/projects/:id` - Update project
-- `DELETE /api/projects/:id` - Delete project
-
-### **Tasks**
-- `GET /api/tasks` - Get all tasks
-- `POST /api/tasks` - Create new task
-- `PUT /api/tasks/:id` - Update task
-- `DELETE /api/tasks/:id` - Delete task
-
-### **Messages**
-- `GET /api/messages/:projectId` - Get project messages
-- `POST /api/messages` - Send message
-- `PUT /api/messages/:id` - Update message
-- `DELETE /api/messages/:id` - Delete message
-
-### **Notifications**
-- `GET /api/notifications` - Get user notifications
-- `PUT /api/notifications/:id` - Mark notification as read
-- `DELETE /api/notifications/:id` - Delete notification
-
-### **Admin**
-- `GET /api/admin/analytics` - Get system analytics
-- `PUT /api/admin/users/:id/promote` - Promote user to admin
-- `DELETE /api/admin/users/:id` - Remove user
-
----
-
-## 🌐 Deployment
-
-- **Frontend:** Deployed on Vercel
-- **Backend:** Deployed on Render
-- **Database:** MongoDB Atlas
+- 🔧 **[API Reference](./docs/API.md)** - Complete API documentation with endpoints, examples, and WebSocket events
+- 🚀 **[Deployment Guide](./docs/DEPLOYMENT.md)** - Step-by-step deployment instructions for multiple platforms
+- 🤝 **[Contributing Guidelines](./docs/CONTRIBUTING.md)** - How to contribute to the project
 
 ---
 
