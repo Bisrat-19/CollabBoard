@@ -174,17 +174,20 @@ exports.updateTask = async (req, res) => {
   try {
     const { assignedTo, status } = req.body;
 
-    // Check if user is trying to assign the task to someone
-    if (assignedTo && assignedTo !== 'unassigned') {
-      // Get the task to find the project
-      const task = await Task.findById(req.params.taskId);
-      if (!task) {
-        return res.status(404).json({ message: 'Task not found' });
-      }
+    // Get the current task to check if assignment is changing
+    const currentTask = await Task.findById(req.params.taskId);
+    if (!currentTask) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
 
+    // Check if user is trying to change the task assignment
+    const currentAssignedTo = currentTask.assignedTo ? currentTask.assignedTo.toString() : null;
+    const newAssignedTo = assignedTo === 'unassigned' ? null : assignedTo;
+    
+    if (assignedTo && assignedTo !== 'unassigned' && currentAssignedTo !== newAssignedTo) {
       // Get the project to check if user is creator or admin
       const Project = require('../models/Project');
-      const project = await Project.findById(task.project);
+      const project = await Project.findById(currentTask.project);
       
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
@@ -201,12 +204,6 @@ exports.updateTask = async (req, res) => {
           message: 'Only project creators and admins can assign team members to tasks' 
         });
       }
-    }
-
-    // Get the current task to check if assignment is changing
-    const currentTask = await Task.findById(req.params.taskId);
-    if (!currentTask) {
-      return res.status(404).json({ message: 'Task not found' });
     }
 
     // Prepare update data
