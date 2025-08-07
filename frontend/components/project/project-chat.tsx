@@ -231,7 +231,7 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
          // Calculate unseen messages (messages not sent by current user)
          const currentUserId = user?.id || user?._id
          const unseenMessages = projectMessages.filter(message => {
-           const senderId = message.sender.id || message.sender._id
+           const senderId = message.sender?.id || message.sender?._id
            return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
          })
          
@@ -415,7 +415,7 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
 
   const isOwnMessage = (message: Message) => {
     const currentUserId = user?.id || user?._id
-    const senderId = message.sender.id || message.sender._id
+    const senderId = message.sender?.id || message.sender?._id
     return currentUserId && senderId && currentUserId.toString() === senderId.toString()
   }
 
@@ -531,13 +531,13 @@ export function ProjectChat({ project, isOpen, onClose, onMessageCountChange }: 
                           <div className={`flex items-start max-w-[75%] ${isOwnMessage(message) ? 'flex-row-reverse' : 'flex-row'}`}>
                             <Avatar className="h-8 w-8 flex-shrink-0 border-2 border-white shadow-sm mt-1">
                               <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-                                {message.sender.name.charAt(0).toUpperCase()}
+                                {message.sender?.name?.charAt(0).toUpperCase() || "?"}
                               </AvatarFallback>
                             </Avatar>
                             <div className={`mx-2 ${isOwnMessage(message) ? 'text-right' : 'text-left'}`}>
                               <div className="flex items-center space-x-2 mb-1">
                                 <span className="text-xs font-medium text-gray-700">
-                                  {message.sender.name}
+                                  {message.sender?.name || "Deleted User"}
                                 </span>
                                 <span className="text-xs text-gray-500">
                                   {formatTime(message.createdAt)}

@@ -82,7 +82,7 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
             const lastSeenIndex = messages.findIndex(msg => msg._id === lastSeenMessageId)
             if (lastSeenIndex !== -1) {
               unseenCount = messages.slice(lastSeenIndex + 1).filter(message => {
-                const senderId = message.sender.id || message.sender._id
+                const senderId = message.sender?.id || message.sender?._id
                 return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
               }).length
             } else {
@@ -132,7 +132,7 @@ export function ProjectBoard({ project, onBack, onTaskUpdated, onProjectUpdated,
               const lastSeenIndex = messages.findIndex(msg => msg._id === lastSeenMessageId)
               if (lastSeenIndex !== -1) {
                 unseenCount = messages.slice(lastSeenIndex + 1).filter(message => {
-                  const senderId = message.sender.id || message.sender._id
+                  const senderId = message.sender?.id || message.sender?._id
                   return currentUserId && senderId && currentUserId.toString() !== senderId.toString()
                 }).length
               } else {

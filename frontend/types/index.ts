@@ -97,7 +97,7 @@ export interface Notification {
 export interface Message {
   _id: string;
   projectId: string;
-  sender: User;
+  sender?: User;
   content: string;
   messageType: 'text' | 'system';
   createdAt: string;
