@@ -103,11 +103,68 @@ exports.updateUser = async (req, res) => {
 // Delete user
 exports.deleteUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const userId = req.params.id;
+    const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    res.json({ message: 'User deleted' });
+    // Import required models
+    const Task = require('../models/Task');
+    const Project = require('../models/Project');
+    const Message = require('../models/Message');
+
+    // Find an admin user to reassign tasks and comments to (if needed)
+    const adminUser = await User.findOne({ role: 'admin' });
+
+    // Clean up references to the deleted user
+    await Promise.all([
+      // Remove user from all projects they're a member of
+      Project.updateMany(
+        { members: userId },
+        { $pull: { members: userId } }
+      ),
+      
+      // Update tasks where user is assigned - set assignedTo to null (this field is optional)
+      Task.updateMany(
+        { assignedTo: userId },
+        { $unset: { assignedTo: 1 } }
+      ),
+      
+      // For tasks where user is the creator, reassign to an admin user if available
+      // If no admin user exists, we'll handle it in the frontend
+      ...(adminUser ? [
+        Task.updateMany(
+          { createdBy: userId },
+          { createdBy: adminUser._id }
+        ),
+        // Update comments where user is the author
+        Task.updateMany(
+          { 'comments.user': userId },
+          { $set: { 'comments.$[elem].user': adminUser._id } },
+          { arrayFilters: [{ 'elem.user': userId }] }
+        ),
+        // Update messages where user is the sender
+        Message.updateMany(
+          { sender: userId },
+          { sender: adminUser._id }
+        ),
+        // Update projects where user is the creator
+        Project.updateMany(
+          { createdBy: userId },
+          { createdBy: adminUser._id }
+        )
+      ] : [
+        // If no admin user exists, delete messages and projects created by the user
+        Message.deleteMany({ sender: userId }),
+        Project.deleteMany({ createdBy: userId })
+      ])
+    ]);
+
+    // Delete the user
+    await User.findByIdAndDelete(userId);
+
+    res.json({ message: 'User deleted successfully' });
   } catch (error) {
+    console.error('Delete user error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
